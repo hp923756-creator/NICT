@@ -23,7 +23,7 @@ UPDATES
 - Records include most centuries, most 50+ scores, sixes, fours, wickets and catches.
 
 ADMIN
-Password: 12309856
+Admin password is configured through the `ADMIN_PASSWORD` environment variable.
 
 IMPORTANT
 This is a frontend-only application. Uploaded matches are stored in the browser

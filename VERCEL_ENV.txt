@@ -1,0 +1,12 @@
+Vercel Environment Variables
+
+SUPABASE_URL=YOUR_SUPABASE_PROJECT_URL
+SUPABASE_SERVICE_ROLE_KEY=YOUR_SUPABASE_SERVICE_ROLE_KEY
+ADMIN_PASSWORD=your-chosen-admin-password
+
+Root Directory: .
+Framework Preset: Other
+Build Command: leave empty
+Output Directory: leave empty
+
+Never expose SUPABASE_SERVICE_ROLE_KEY to the browser.

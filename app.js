@@ -1,6 +1,26 @@
 const DATA={}; let view="home", currentPlayer="", liveTimer=null, rankingFormat="T20", recordFormat="T20";
-const BALL_DELAY_SECONDS=60, OVER_BREAK_SECONDS=120, INNINGS_BREAK_SECONDS=900, TOSS_BREAK_SECONDS=900;
+const BALL_DELAY_SECONDS=20, OVER_BREAK_SECONDS=60, INNINGS_BREAK_SECONDS=900, TOSS_BREAK_SECONDS=900;
 const app=document.getElementById("app");
+const CLOUD_API="/api/matches";
+let CLOUD_MATCHES=[];
+async function cloudMatches(){
+  try{
+    const r=await fetch(CLOUD_API,{cache:"no-store"});
+    if(!r.ok)throw new Error(await r.text());
+    const rows=await r.json();
+    CLOUD_MATCHES=(Array.isArray(rows)?rows:[]).map(x=>x.match_json||x);
+    return CLOUD_MATCHES;
+  }catch(e){console.warn("Shared match server unavailable:",e);return []}
+}
+async function adminCloud(method,body,id=""){
+  const password=sessionStorage.getItem("nict_admin_password")||"";
+  const url=id?`${CLOUD_API}?id=${encodeURIComponent(id)}`:CLOUD_API;
+  const r=await fetch(url,{method,headers:{"Content-Type":"application/json","x-admin-password":password},body:body?JSON.stringify(body):undefined});
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(data.error||"Cloud request failed");
+  return data;
+}
+
 const TEAM_MAP={
  "Galgotia College Cricket Club":"GCET","Galgotia College":"GCET","GCCC":"GCET","GCET":"GCET",
  "GL Bajaj Cricket Club":"GLB","GL Bajaj":"GLB","GLB":"GLB",
@@ -38,7 +58,14 @@ async function loadData(){
  render();
 }
 
+function selectSharedMatchFromURL(){
+  const id=new URLSearchParams(location.search).get("match");
+  if(!id)return;
+  const m=(DATA.live_matches||[]).find(x=>String(x.match_id)===String(id));
+  if(m){localStorage.setItem("nict_active_match_id",String(id));view="live";}
+}
 function render(){
+  selectSharedMatchFromURL();
  if(view==="home")return home(); if(view==="live")return live(); if(view==="matches")return matches();
  if(view==="teams")return teamsPage(); if(view==="players")return playersPage(); if(view==="player")return playerPage();
  if(view==="rankings"||view==="playerRankings")return battingRankings();
@@ -63,13 +90,13 @@ function home(){
 }
 function matchHero(m){
  const a=st(m.team_a),b=st(m.team_b);
- return `<div class="scorehero"><div class="match-banner"><div><div class="meta">${esc(m.format||"Match")} · ${esc(m.match_id||"")}</div><h2>${esc(a)} vs ${esc(b)}</h2><div class="meta">${esc(m.venue||"Noida Intercollege Cricket Ground")}</div></div><div class="team-logos">${logo(a)}${logo(b)}</div></div><div style="margin-top:15px"><button class="btn" onclick="navigate('live')">Open Live Scorecard</button></div></div>`
+ return `<div class="scorehero"><div class="match-banner"><div><div class="meta">${esc(m.format||"Match")} · ${esc(m.match_id||"")}</div><h2>${esc(a)} vs ${esc(b)}</h2><div class="meta">${esc(m.venue||"Noida Intercollege Cricket Ground")}</div></div><div class="team-logos">${logo(a)}${logo(b)}</div></div><div style="margin-top:15px"><button class="btn" onclick="navigate('live')">Open Live Scorecard</button> <button class="btn secondary" onclick="navigator.clipboard?.writeText(location.origin+location.pathname+'?match='+encodeURIComponent(m.match_id||''))">Copy Live Link</button></div></div>`
 }
 function matches(){
  const rows=(DATA.live_matches||[]).map((m,i)=>`<tr><td>${esc(m.match_id||"MATCH-"+(i+1))}</td><td>${esc(m.format||"")}</td><td><b>${esc(st(m.team_a))}</b> vs <b>${esc(st(m.team_b))}</b></td><td><span class="pill ${m.status==="completed"?"":"live-pill"}">${esc(m.status||"Replay")}</span></td><td><button class="btn" onclick="startLive(${i})">Watch</button></td></tr>`);
  app.innerHTML=head("Matches","Every uploaded match is normalized to short team names")+table(["Match","Format","Teams","Status",""],rows);
 }
-function startLive(i){localStorage.setItem("nict_active_match",String(i));replayStart=Date.now();localStorage.setItem("nict_replay_start",String(replayStart));view="live";render()}
+function startLive(i){const m=DATA.live_matches?.[i];if(m)localStorage.setItem("nict_active_match_id",String(m.match_id||m.file_name||""));localStorage.setItem("nict_active_match",String(i));view="live";render()}
 
 function getActiveMatch(){
  const i=Number(localStorage.getItem("nict_active_match")||0);
@@ -125,7 +152,7 @@ function updateCareerFromMatch(m){
 }
 function renderLive(raw){
  const m=normalizedMatch(raw), ds=m.deliveries||[];
- const elapsed=Math.max(0,(Date.now()-replayStart)/1000);
+ const elapsed=Math.max(0,m.started_at?(Date.now()-new Date(m.started_at).getTime())/1000:0);
  const replayState=getReplayState(ds,elapsed,m), shown=ds.slice(0,replayState.idx);
  const state=calcMatch(shown,m);
  if(m.file_name&&shown.length===ds.length&&ds.length){updateCareerFromMatch(m);}
@@ -630,16 +657,14 @@ function loadSavedPerformance(){
  }catch(e){}
 }
 function mergedCareerRecords(){
- const base=(DATA.career_records||[]).map(x=>JSON.parse(JSON.stringify(x)));
- const saved=JSON.parse(localStorage.getItem("nict_career_records")||"null");
- return saved||base;
+  return (DATA.career_records||[]).map(x=>JSON.parse(JSON.stringify(x)));
 }
 
 function admin(){
  if(sessionStorage.getItem("nict_admin")==="true")return adminPanel();
  app.innerHTML=`<div class="admin-lock card"><h1>🔒 Admin</h1><p class="muted">Enter the tournament admin password.</p><input id="adminPass" class="input" type="password" placeholder="Password"><button class="btn" onclick="unlock()">Unlock Admin</button><p id="adminMsg" class="muted"></p></div>`;
 }
-function unlock(){if(document.getElementById("adminPass").value==="12309856"){sessionStorage.setItem("nict_admin","true");adminPanel()}else document.getElementById("adminMsg").textContent="Incorrect password."}
+function unlock(){const p=document.getElementById("adminPass").value;if(p==="12309856"){sessionStorage.setItem("nict_admin","true");sessionStorage.setItem("nict_admin_password",p);adminPanel()}else document.getElementById("adminMsg").textContent="Incorrect password."}
 function adminPanel(){
  app.innerHTML=head("Admin","Upload a complete ball-by-ball JSON and start it in the frontend viewer")+
  `<div class="notice">Upload format: JSON with <b>deliveries</b>. Team names are normalized automatically. A filename such as <b>GCET_vs_GLB.json</b> is also understood. Uploaded matches are stored in this browser.</div>
@@ -649,13 +674,19 @@ function adminPanel(){
  renderAdminMatches();
 }
 
-function rebuildCareerFromCompletedMatches(){
-  const all=DATA.live_matches||[];
-  let added=0;
-  all.forEach(m=>{ if(applyCompletedMatchToCareer(m)) added++; });
-  mergeCareerIntoUI();
-  alert(`${added} completed match${added===1?"":"es"} added to career records.`);
-  renderAdminMatches();
+async function rebuildCareerFromCompletedMatches(){
+  try{
+    const r=await fetch("/api/stats",{cache:"no-store"});
+    if(!r.ok)throw new Error("Stats server unavailable");
+    const s=await r.json();
+    if(s.career_records)DATA.career_records=s.career_records;
+    if(s.players_format)DATA.players_format=s.players_format;
+    if(s.batting_rankings)DATA.batting_rankings=s.batting_rankings;
+    if(s.bowling_rankings)DATA.bowling_rankings=s.bowling_rankings;
+    if(s.ratings)DATA.ratings=s.ratings;
+    renderAdminMatches();
+    alert("Career records and rankings refreshed from shared matches.");
+  }catch(e){alert(e.message)}
 }
 
 function renderAdminMatches(){
@@ -674,20 +705,45 @@ function parseFilename(name){
  return m?{a:st(m[1]),b:st(m[2])}:null;
 }
 async function uploadJSON(){
- const f=document.getElementById("jsonFile").files[0],msg=document.getElementById("uploadMsg");if(!f){msg.textContent="Choose a JSON file.";return}
- try{
-   const d=JSON.parse(await f.text());const fn=parseFilename(f.name);
-   if(!Array.isArray(d.deliveries))throw new Error("JSON must contain a deliveries array.");
-   if(fn){d.team_a=fn.a;d.team_b=fn.b}
-   d.team_a=st(d.team_a||"");d.team_b=st(d.team_b||"");
-   if(!d.team_a||!d.team_b)throw new Error("Team names missing. Use team_a/team_b or filename TEAM1_vs_TEAM2.json.");
-   d.file_name=f.name;d.match_id=d.match_id||f.name.replace(/\.json$/i,"");d.status="live";
-   d.deliveries=d.deliveries.map(x=>({...x,batsman_team:x.batsman_team||((Number(x.innings||1)%2===1)?d.team_a:d.team_b),bowling_team:x.bowling_team||((Number(x.innings||1)%2===1)?d.team_b:d.team_a)}));
-  const local=JSON.parse(localStorage.getItem("nict_uploaded_matches")||"[]");local.unshift(d);localStorage.setItem("nict_uploaded_matches",JSON.stringify(local));
-  DATA.live_matches=local;localStorage.setItem("nict_active_match","0");localStorage.setItem("nict_uploaded_mode","true");replayStart=Date.now();localStorage.setItem("nict_replay_start",String(replayStart));msg.textContent=`Uploaded: ${d.team_a} vs ${d.team_b}`;navigate("live");
- }catch(e){msg.textContent="Upload failed: "+e.message}
+  const f=document.getElementById("jsonFile").files[0],msg=document.getElementById("uploadMsg");
+  if(!f){msg.textContent="Choose a JSON file.";return}
+  try{
+    const d=JSON.parse(await f.text()),fn=parseFilename(f.name);
+    if(!Array.isArray(d.deliveries))throw new Error("JSON must contain a deliveries array.");
+    if(fn){d.team_a=fn.a;d.team_b=fn.b}
+    d.team_a=st(d.team_a||"");d.team_b=st(d.team_b||"");
+    if(!d.team_a||!d.team_b)throw new Error("Team names missing.");
+    d.file_name=f.name;d.match_id=d.match_id||f.name.replace(/\.json$/i,"");
+    d.status="upcoming";d.started_at=null;
+    d.deliveries=d.deliveries.map(x=>({...x,
+      batsman_team:x.batsman_team||((Number(x.innings||1)%2===1)?d.team_a:d.team_b),
+      bowling_team:x.bowling_team||((Number(x.innings||1)%2===1)?d.team_b:d.team_a)
+    }));
+    d.events=d.events||[];
+    await adminCloud("POST",d);
+    DATA.live_matches=await cloudMatches();
+    msg.textContent=`Uploaded to shared server: ${d.team_a} vs ${d.team_b}`;
+    renderAdminMatches();
+  }catch(e){msg.textContent="Upload failed: "+e.message}
 }
-function useUploaded(i){localStorage.setItem("nict_active_match",String(i));localStorage.setItem("nict_uploaded_mode","true");replayStart=Date.now();localStorage.setItem("nict_replay_start",String(replayStart));navigate("live")}
-function deleteUploaded(i){const local=JSON.parse(localStorage.getItem("nict_uploaded_matches")||"[]");local.splice(i,1);localStorage.setItem("nict_uploaded_matches",JSON.stringify(local));DATA.live_matches=[...local,...(DATA.live_matches||[]).filter(x=>!x.file_name)];renderAdminMatches()}
+async function useUploaded(i){
+  const m=DATA.live_matches?.[i];if(!m)return;
+  try{
+    const updated={...m,status:"live",started_at:new Date().toISOString()};
+    await adminCloud("POST",updated);
+    DATA.live_matches=await cloudMatches();
+    const fresh=DATA.live_matches.find(x=>String(x.match_id)===String(m.match_id))||updated;
+    localStorage.setItem("nict_active_match_id",String(fresh.match_id));
+    view="live";render();
+  }catch(e){alert("Could not start shared live match: "+e.message)}
+}
+async function deleteUploaded(i){
+  const m=DATA.live_matches?.[i];if(!m)return;
+  try{
+    await adminCloud("DELETE",null,m.match_id);
+    DATA.live_matches=await cloudMatches();
+    renderAdminMatches();
+  }catch(e){alert("Delete failed: "+e.message)}
+}
 
 loadData();
