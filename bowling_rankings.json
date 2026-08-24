@@ -1,0 +1,2102 @@
+[
+  {
+    "format": "ODI",
+    "player": "Aayush Ahuja",
+    "short_team": "KCC",
+    "rating": 89.5,
+    "rank": 1
+  },
+  {
+    "format": "ODI",
+    "player": "Adarsh Yadav",
+    "short_team": "GLB",
+    "rating": 88.77,
+    "rank": 2
+  },
+  {
+    "format": "ODI",
+    "player": "Aman Bhardwaj",
+    "short_team": "ABES",
+    "rating": 87.66,
+    "rank": 3
+  },
+  {
+    "format": "ODI",
+    "player": "Ankit Bhadouria",
+    "short_team": "JSS",
+    "rating": 87.08,
+    "rank": 4
+  },
+  {
+    "format": "ODI",
+    "player": "Anmol Chauhan",
+    "short_team": "KCC",
+    "rating": 86.14,
+    "rank": 5
+  },
+  {
+    "format": "ODI",
+    "player": "Arjun Patel",
+    "short_team": "GCET",
+    "rating": 85.47,
+    "rank": 6
+  },
+  {
+    "format": "ODI",
+    "player": "Arnav Chauhan",
+    "short_team": "JSS",
+    "rating": 84.21,
+    "rank": 7
+  },
+  {
+    "format": "ODI",
+    "player": "Ashish Kumar",
+    "short_team": "JSS",
+    "rating": 83.72,
+    "rank": 8
+  },
+  {
+    "format": "ODI",
+    "player": "Devansh Sharma",
+    "short_team": "GCET",
+    "rating": 82.84,
+    "rank": 9
+  },
+  {
+    "format": "ODI",
+    "player": "Devansh Singh",
+    "short_team": "ABES",
+    "rating": 82.23,
+    "rank": 10
+  },
+  {
+    "format": "ODI",
+    "player": "Divit Arora",
+    "short_team": "GLB",
+    "rating": 81.5,
+    "rank": 11
+  },
+  {
+    "format": "ODI",
+    "player": "Harshit Tomar",
+    "short_team": "ABES",
+    "rating": 80.39,
+    "rank": 12
+  },
+  {
+    "format": "ODI",
+    "player": "Ishaan Bhardwaj",
+    "short_team": "GLB",
+    "rating": 79.81,
+    "rank": 13
+  },
+  {
+    "format": "ODI",
+    "player": "Kaushik Mahur",
+    "short_team": "ABES",
+    "rating": 78.87,
+    "rank": 14
+  },
+  {
+    "format": "ODI",
+    "player": "Keshav Rawat",
+    "short_team": "GLB",
+    "rating": 78.2,
+    "rank": 15
+  },
+  {
+    "format": "ODI",
+    "player": "Krish Tyagi",
+    "short_team": "KCC",
+    "rating": 76.94,
+    "rank": 16
+  },
+  {
+    "format": "ODI",
+    "player": "Kushagra Singh Thakur",
+    "short_team": "JSS",
+    "rating": 76.45,
+    "rank": 17
+  },
+  {
+    "format": "ODI",
+    "player": "Lakshya Goyal",
+    "short_team": "KCC",
+    "rating": 75.57,
+    "rank": 18
+  },
+  {
+    "format": "ODI",
+    "player": "Manav Batra",
+    "short_team": "ABES",
+    "rating": 74.96,
+    "rank": 19
+  },
+  {
+    "format": "ODI",
+    "player": "Manish Rawat",
+    "short_team": "GCET",
+    "rating": 74.23,
+    "rank": 20
+  },
+  {
+    "format": "ODI",
+    "player": "Mohini Sharma",
+    "short_team": "GLB",
+    "rating": 73.12,
+    "rank": 21
+  },
+  {
+    "format": "ODI",
+    "player": "Mohit Kumar",
+    "short_team": "GCET",
+    "rating": 72.54,
+    "rank": 22
+  },
+  {
+    "format": "ODI",
+    "player": "Mudit Chauhan",
+    "short_team": "GLB",
+    "rating": 71.6,
+    "rank": 23
+  },
+  {
+    "format": "ODI",
+    "player": "Nikhil Saini",
+    "short_team": "GCET",
+    "rating": 70.93,
+    "rank": 24
+  },
+  {
+    "format": "ODI",
+    "player": "Nishant Dagar",
+    "short_team": "JSS",
+    "rating": 69.67,
+    "rank": 25
+  },
+  {
+    "format": "ODI",
+    "player": "Pratham Rawat",
+    "short_team": "JSS",
+    "rating": 69.18,
+    "rank": 26
+  },
+  {
+    "format": "ODI",
+    "player": "Rishabh Jaiswal",
+    "short_team": "ABES",
+    "rating": 68.3,
+    "rank": 27
+  },
+  {
+    "format": "ODI",
+    "player": "Rishit Verma",
+    "short_team": "KCC",
+    "rating": 67.69,
+    "rank": 28
+  },
+  {
+    "format": "ODI",
+    "player": "Rudransh Tyagi",
+    "short_team": "JSS",
+    "rating": 66.96,
+    "rank": 29
+  },
+  {
+    "format": "ODI",
+    "player": "Samar Singh",
+    "short_team": "KCC",
+    "rating": 65.85,
+    "rank": 30
+  },
+  {
+    "format": "ODI",
+    "player": "Sangam Singh",
+    "short_team": "ABES",
+    "rating": 65.27,
+    "rank": 31
+  },
+  {
+    "format": "ODI",
+    "player": "Saurabh Kumar",
+    "short_team": "GCET",
+    "rating": 64.33,
+    "rank": 32
+  },
+  {
+    "format": "ODI",
+    "player": "Shivank Tomar",
+    "short_team": "JSS",
+    "rating": 63.66,
+    "rank": 33
+  },
+  {
+    "format": "ODI",
+    "player": "Suyash Tomar",
+    "short_team": "GLB",
+    "rating": 62.4,
+    "rank": 34
+  },
+  {
+    "format": "ODI",
+    "player": "Vedant Saini",
+    "short_team": "KCC",
+    "rating": 61.91,
+    "rank": 35
+  },
+  {
+    "format": "ODI",
+    "player": "Vihaan Dagar",
+    "short_team": "GLB",
+    "rating": 61.03,
+    "rank": 36
+  },
+  {
+    "format": "ODI",
+    "player": "Yashvardhan Rana",
+    "short_team": "JSS",
+    "rating": 60.42,
+    "rank": 37
+  },
+  {
+    "format": "ODI",
+    "player": "Pranav Goyal",
+    "short_team": "GLB",
+    "rating": 59.69,
+    "rank": 38
+  },
+  {
+    "format": "ODI",
+    "player": "Yuvraj Meena",
+    "short_team": "ABES",
+    "rating": 58.58,
+    "rank": 39
+  },
+  {
+    "format": "ODI",
+    "player": "Anubhav Yadav",
+    "short_team": "JSS",
+    "rating": 58.0,
+    "rank": 40
+  },
+  {
+    "format": "ODI",
+    "player": "Aditya Singh",
+    "short_team": "GCET",
+    "rating": 57.06,
+    "rank": 41
+  },
+  {
+    "format": "ODI",
+    "player": "Priyanshu Gupta",
+    "short_team": "GCET",
+    "rating": 56.39,
+    "rank": 42
+  },
+  {
+    "format": "ODI",
+    "player": "Shivam Chauhan",
+    "short_team": "GCET",
+    "rating": 55.13,
+    "rank": 43
+  },
+  {
+    "format": "ODI",
+    "player": "Nakul Bhatia",
+    "short_team": "KCC",
+    "rating": 54.64,
+    "rank": 44
+  },
+  {
+    "format": "ODI",
+    "player": "Ayush Dubey",
+    "short_team": "ABES",
+    "rating": 53.76,
+    "rank": 45
+  },
+  {
+    "format": "ODI",
+    "player": "Yatin Sharma",
+    "short_team": "KCC",
+    "rating": 53.15,
+    "rank": 46
+  },
+  {
+    "format": "ODI",
+    "player": "Aarush Bedi",
+    "short_team": "GLB",
+    "rating": 52.42,
+    "rank": 47
+  },
+  {
+    "format": "ODI",
+    "player": "Gaurav Rajput",
+    "short_team": "ABES",
+    "rating": 51.31,
+    "rank": 48
+  },
+  {
+    "format": "ODI",
+    "player": "Samarjeet Singh",
+    "short_team": "ABES",
+    "rating": 50.73,
+    "rank": 49
+  },
+  {
+    "format": "ODI",
+    "player": "Devendra Pal",
+    "short_team": "JSS",
+    "rating": 49.79,
+    "rank": 50
+  },
+  {
+    "format": "ODI",
+    "player": "Vatsal Nagar",
+    "short_team": "GLB",
+    "rating": 49.12,
+    "rank": 51
+  },
+  {
+    "format": "ODI",
+    "player": "Lavish Chaudhary",
+    "short_team": "ABES",
+    "rating": 47.86,
+    "rank": 52
+  },
+  {
+    "format": "ODI",
+    "player": "Nakul Chaudhary",
+    "short_team": "GLB",
+    "rating": 47.37,
+    "rank": 53
+  },
+  {
+    "format": "ODI",
+    "player": "Vivek Yadav",
+    "short_team": "GCET",
+    "rating": 46.49,
+    "rank": 54
+  },
+  {
+    "format": "ODI",
+    "player": "Aaryan Kapoor",
+    "short_team": "KCC",
+    "rating": 45.88,
+    "rank": 55
+  },
+  {
+    "format": "ODI",
+    "player": "Shaurya Dagar",
+    "short_team": "KCC",
+    "rating": 45.15,
+    "rank": 56
+  },
+  {
+    "format": "ODI",
+    "player": "Kartikeya Singh",
+    "short_team": "JSS",
+    "rating": 44.04,
+    "rank": 57
+  },
+  {
+    "format": "ODI",
+    "player": "Himanshu Dagar",
+    "short_team": "KCC",
+    "rating": 43.46,
+    "rank": 58
+  },
+  {
+    "format": "ODI",
+    "player": "Tanishq Agarwal",
+    "short_team": "JSS",
+    "rating": 42.52,
+    "rank": 59
+  },
+  {
+    "format": "ODI",
+    "player": "Shaurya Malik",
+    "short_team": "GLB",
+    "rating": 41.85,
+    "rank": 60
+  },
+  {
+    "format": "ODI",
+    "player": "Ankit Kumar",
+    "short_team": "GCET",
+    "rating": 40.59,
+    "rank": 61
+  },
+  {
+    "format": "ODI",
+    "player": "Abhishek Choudhary",
+    "short_team": "KCC",
+    "rating": 40.1,
+    "rank": 62
+  },
+  {
+    "format": "ODI",
+    "player": "Harsh Pandey",
+    "short_team": "GCET",
+    "rating": 39.22,
+    "rank": 63
+  },
+  {
+    "format": "ODI",
+    "player": "Parth Sharma",
+    "short_team": "GLB",
+    "rating": 38.61,
+    "rank": 64
+  },
+  {
+    "format": "ODI",
+    "player": "Abhay Tanwar",
+    "short_team": "GLB",
+    "rating": 37.88,
+    "rank": 65
+  },
+  {
+    "format": "ODI",
+    "player": "Parth Bansal",
+    "short_team": "KCC",
+    "rating": 36.77,
+    "rank": 66
+  },
+  {
+    "format": "ODI",
+    "player": "Devansh Kapoor",
+    "short_team": "KCC",
+    "rating": 36.19,
+    "rank": 67
+  },
+  {
+    "format": "ODI",
+    "player": "Sarthak Beniwal",
+    "short_team": "JSS",
+    "rating": 35.25,
+    "rank": 68
+  },
+  {
+    "format": "ODI",
+    "player": "Ayush Gupta",
+    "short_team": "GCET",
+    "rating": 34.58,
+    "rank": 69
+  },
+  {
+    "format": "ODI",
+    "player": "Raghav Bansal",
+    "short_team": "KCC",
+    "rating": 33.32,
+    "rank": 70
+  },
+  {
+    "format": "ODI",
+    "player": "Raghav Tripathi",
+    "short_team": "JSS",
+    "rating": 32.83,
+    "rank": 71
+  },
+  {
+    "format": "ODI",
+    "player": "Dhruv Kashyap",
+    "short_team": "JSS",
+    "rating": 31.95,
+    "rank": 72
+  },
+  {
+    "format": "ODI",
+    "player": "Anshul Tiwari",
+    "short_team": "ABES",
+    "rating": 31.34,
+    "rank": 73
+  },
+  {
+    "format": "ODI",
+    "player": "Rudra Pratap",
+    "short_team": "KCC",
+    "rating": 30.61,
+    "rank": 74
+  },
+  {
+    "format": "ODI",
+    "player": "Siddharth Srivastava",
+    "short_team": "ABES",
+    "rating": 29.5,
+    "rank": 75
+  },
+  {
+    "format": "ODI",
+    "player": "Ritvik Bansal",
+    "short_team": "ABES",
+    "rating": 28.92,
+    "rank": 76
+  },
+  {
+    "format": "ODI",
+    "player": "Vikrant Saini",
+    "short_team": "ABES",
+    "rating": 27.98,
+    "rank": 77
+  },
+  {
+    "format": "ODI",
+    "player": "Lakshay Bisht",
+    "short_team": "JSS",
+    "rating": 27.31,
+    "rank": 78
+  },
+  {
+    "format": "ODI",
+    "player": "Deepak Joshi",
+    "short_team": "GCET",
+    "rating": 26.05,
+    "rank": 79
+  },
+  {
+    "format": "ODI",
+    "player": "Tushar Saini",
+    "short_team": "GLB",
+    "rating": 25.56,
+    "rank": 80
+  },
+  {
+    "format": "ODI",
+    "player": "Shreyansh Chaurasia",
+    "short_team": "JSS",
+    "rating": 24.68,
+    "rank": 81
+  },
+  {
+    "format": "ODI",
+    "player": "Abhishek Raj",
+    "short_team": "GCET",
+    "rating": 24.07,
+    "rank": 82
+  },
+  {
+    "format": "ODI",
+    "player": "Deepanshu Gupta",
+    "short_team": "GLB",
+    "rating": 23.34,
+    "rank": 83
+  },
+  {
+    "format": "ODI",
+    "player": "Manas Kapoor",
+    "short_team": "JSS",
+    "rating": 22.23,
+    "rank": 84
+  },
+  {
+    "format": "ODI",
+    "player": "Abhinav Pal",
+    "short_team": "ABES",
+    "rating": 21.65,
+    "rank": 85
+  },
+  {
+    "format": "ODI",
+    "player": "Abeer Malhotra",
+    "short_team": "KCC",
+    "rating": 20.71,
+    "rank": 86
+  },
+  {
+    "format": "ODI",
+    "player": "Kartik Chauhan",
+    "short_team": "ABES",
+    "rating": 20.04,
+    "rank": 87
+  },
+  {
+    "format": "ODI",
+    "player": "Aarav Sharma",
+    "short_team": "GCET",
+    "rating": 18.78,
+    "rank": 88
+  },
+  {
+    "format": "ODI",
+    "player": "Aviral Saxena",
+    "short_team": "JSS",
+    "rating": 18.29,
+    "rank": 89
+  },
+  {
+    "format": "ODI",
+    "player": "Rahul Mishra",
+    "short_team": "GCET",
+    "rating": 17.41,
+    "rank": 90
+  },
+  {
+    "format": "ODI",
+    "player": "Kunal Bhadana",
+    "short_team": "KCC",
+    "rating": 16.8,
+    "rank": 91
+  },
+  {
+    "format": "ODI",
+    "player": "Rohan Verma",
+    "short_team": "GCET",
+    "rating": 16.07,
+    "rank": 92
+  },
+  {
+    "format": "ODI",
+    "player": "Rajat Tyagi",
+    "short_team": "GLB",
+    "rating": 14.96,
+    "rank": 93
+  },
+  {
+    "format": "ODI",
+    "player": "Adittya Bansal",
+    "short_team": "GLB",
+    "rating": 14.38,
+    "rank": 94
+  },
+  {
+    "format": "ODI",
+    "player": "Ratan Sawrankar",
+    "short_team": "ABES",
+    "rating": 13.44,
+    "rank": 95
+  },
+  {
+    "format": "ODI",
+    "player": "Ronav Kapoor",
+    "short_team": "GLB",
+    "rating": 12.77,
+    "rank": 96
+  },
+  {
+    "format": "ODI",
+    "player": "Kunal Yadav",
+    "short_team": "GCET",
+    "rating": 11.51,
+    "rank": 97
+  },
+  {
+    "format": "ODI",
+    "player": "Naman Tyagi",
+    "short_team": "ABES",
+    "rating": 11.02,
+    "rank": 98
+  },
+  {
+    "format": "ODI",
+    "player": "Yash Tiwari",
+    "short_team": "GCET",
+    "rating": 10.14,
+    "rank": 99
+  },
+  {
+    "format": "ODI",
+    "player": "Aryan Tanwar",
+    "short_team": "KCC",
+    "rating": 9.53,
+    "rank": 100
+  },
+  {
+    "format": "T20",
+    "player": "Aayush Ahuja",
+    "short_team": "KCC",
+    "rating": 89.5,
+    "rank": 1
+  },
+  {
+    "format": "T20",
+    "player": "Adarsh Yadav",
+    "short_team": "GLB",
+    "rating": 88.77,
+    "rank": 2
+  },
+  {
+    "format": "T20",
+    "player": "Aman Bhardwaj",
+    "short_team": "ABES",
+    "rating": 87.66,
+    "rank": 3
+  },
+  {
+    "format": "T20",
+    "player": "Ankit Bhadouria",
+    "short_team": "JSS",
+    "rating": 87.08,
+    "rank": 4
+  },
+  {
+    "format": "T20",
+    "player": "Anmol Chauhan",
+    "short_team": "KCC",
+    "rating": 86.14,
+    "rank": 5
+  },
+  {
+    "format": "T20",
+    "player": "Arjun Patel",
+    "short_team": "GCET",
+    "rating": 85.47,
+    "rank": 6
+  },
+  {
+    "format": "T20",
+    "player": "Arnav Chauhan",
+    "short_team": "JSS",
+    "rating": 84.21,
+    "rank": 7
+  },
+  {
+    "format": "T20",
+    "player": "Ashish Kumar",
+    "short_team": "JSS",
+    "rating": 83.72,
+    "rank": 8
+  },
+  {
+    "format": "T20",
+    "player": "Ayush Dubey",
+    "short_team": "ABES",
+    "rating": 82.84,
+    "rank": 9
+  },
+  {
+    "format": "T20",
+    "player": "Ayush Gupta",
+    "short_team": "GCET",
+    "rating": 82.23,
+    "rank": 10
+  },
+  {
+    "format": "T20",
+    "player": "Devansh Sharma",
+    "short_team": "GCET",
+    "rating": 81.5,
+    "rank": 11
+  },
+  {
+    "format": "T20",
+    "player": "Devansh Singh",
+    "short_team": "ABES",
+    "rating": 80.39,
+    "rank": 12
+  },
+  {
+    "format": "T20",
+    "player": "Divit Arora",
+    "short_team": "GLB",
+    "rating": 79.81,
+    "rank": 13
+  },
+  {
+    "format": "T20",
+    "player": "Harshit Tomar",
+    "short_team": "ABES",
+    "rating": 78.87,
+    "rank": 14
+  },
+  {
+    "format": "T20",
+    "player": "Ishaan Bhardwaj",
+    "short_team": "GLB",
+    "rating": 78.2,
+    "rank": 15
+  },
+  {
+    "format": "T20",
+    "player": "Kaushik Mahur",
+    "short_team": "ABES",
+    "rating": 76.94,
+    "rank": 16
+  },
+  {
+    "format": "T20",
+    "player": "Keshav Rawat",
+    "short_team": "GLB",
+    "rating": 76.45,
+    "rank": 17
+  },
+  {
+    "format": "T20",
+    "player": "Krish Tyagi",
+    "short_team": "KCC",
+    "rating": 75.57,
+    "rank": 18
+  },
+  {
+    "format": "T20",
+    "player": "Kushagra Singh Thakur",
+    "short_team": "JSS",
+    "rating": 74.96,
+    "rank": 19
+  },
+  {
+    "format": "T20",
+    "player": "Manish Rawat",
+    "short_team": "GCET",
+    "rating": 74.23,
+    "rank": 20
+  },
+  {
+    "format": "T20",
+    "player": "Mohit Kumar",
+    "short_team": "GCET",
+    "rating": 73.12,
+    "rank": 21
+  },
+  {
+    "format": "T20",
+    "player": "Mudit Chauhan",
+    "short_team": "GLB",
+    "rating": 72.54,
+    "rank": 22
+  },
+  {
+    "format": "T20",
+    "player": "Nikhil Saini",
+    "short_team": "GCET",
+    "rating": 71.6,
+    "rank": 23
+  },
+  {
+    "format": "T20",
+    "player": "Nishant Dagar",
+    "short_team": "JSS",
+    "rating": 70.93,
+    "rank": 24
+  },
+  {
+    "format": "T20",
+    "player": "Pranav Goyal",
+    "short_team": "GLB",
+    "rating": 69.67,
+    "rank": 25
+  },
+  {
+    "format": "T20",
+    "player": "Pratham Rawat",
+    "short_team": "JSS",
+    "rating": 69.18,
+    "rank": 26
+  },
+  {
+    "format": "T20",
+    "player": "Rishabh Jaiswal",
+    "short_team": "ABES",
+    "rating": 68.3,
+    "rank": 27
+  },
+  {
+    "format": "T20",
+    "player": "Rishit Verma",
+    "short_team": "KCC",
+    "rating": 67.69,
+    "rank": 28
+  },
+  {
+    "format": "T20",
+    "player": "Samar Singh",
+    "short_team": "KCC",
+    "rating": 66.96,
+    "rank": 29
+  },
+  {
+    "format": "T20",
+    "player": "Samarjeet Singh",
+    "short_team": "ABES",
+    "rating": 65.85,
+    "rank": 30
+  },
+  {
+    "format": "T20",
+    "player": "Saurabh Kumar",
+    "short_team": "GCET",
+    "rating": 65.27,
+    "rank": 31
+  },
+  {
+    "format": "T20",
+    "player": "Shivam Chauhan",
+    "short_team": "GCET",
+    "rating": 64.33,
+    "rank": 32
+  },
+  {
+    "format": "T20",
+    "player": "Suyash Tomar",
+    "short_team": "GLB",
+    "rating": 63.66,
+    "rank": 33
+  },
+  {
+    "format": "T20",
+    "player": "Vivek Yadav",
+    "short_team": "GCET",
+    "rating": 62.4,
+    "rank": 34
+  },
+  {
+    "format": "T20",
+    "player": "Yashvardhan Rana",
+    "short_team": "JSS",
+    "rating": 61.91,
+    "rank": 35
+  },
+  {
+    "format": "T20",
+    "player": "Yatin Sharma",
+    "short_team": "KCC",
+    "rating": 61.03,
+    "rank": 36
+  },
+  {
+    "format": "T20",
+    "player": "Yuvraj Meena",
+    "short_team": "ABES",
+    "rating": 60.42,
+    "rank": 37
+  },
+  {
+    "format": "T20",
+    "player": "Gaurav Rajput",
+    "short_team": "ABES",
+    "rating": 59.69,
+    "rank": 38
+  },
+  {
+    "format": "T20",
+    "player": "Rudransh Tyagi",
+    "short_team": "JSS",
+    "rating": 58.58,
+    "rank": 39
+  },
+  {
+    "format": "T20",
+    "player": "Vihaan Dagar",
+    "short_team": "GLB",
+    "rating": 58.0,
+    "rank": 40
+  },
+  {
+    "format": "T20",
+    "player": "Nakul Bhatia",
+    "short_team": "KCC",
+    "rating": 57.06,
+    "rank": 41
+  },
+  {
+    "format": "T20",
+    "player": "Shivank Tomar",
+    "short_team": "JSS",
+    "rating": 56.39,
+    "rank": 42
+  },
+  {
+    "format": "T20",
+    "player": "Aditya Singh",
+    "short_team": "GCET",
+    "rating": 55.13,
+    "rank": 43
+  },
+  {
+    "format": "T20",
+    "player": "Ankit Kumar",
+    "short_team": "GCET",
+    "rating": 54.64,
+    "rank": 44
+  },
+  {
+    "format": "T20",
+    "player": "Mohini Sharma",
+    "short_team": "GLB",
+    "rating": 53.76,
+    "rank": 45
+  },
+  {
+    "format": "T20",
+    "player": "Vedant Saini",
+    "short_team": "KCC",
+    "rating": 53.15,
+    "rank": 46
+  },
+  {
+    "format": "T20",
+    "player": "Priyanshu Gupta",
+    "short_team": "GCET",
+    "rating": 52.42,
+    "rank": 47
+  },
+  {
+    "format": "T20",
+    "player": "Tanishq Agarwal",
+    "short_team": "JSS",
+    "rating": 51.31,
+    "rank": 48
+  },
+  {
+    "format": "T20",
+    "player": "Anubhav Yadav",
+    "short_team": "JSS",
+    "rating": 50.73,
+    "rank": 49
+  },
+  {
+    "format": "T20",
+    "player": "Nakul Chaudhary",
+    "short_team": "GLB",
+    "rating": 49.79,
+    "rank": 50
+  },
+  {
+    "format": "T20",
+    "player": "Devendra Pal",
+    "short_team": "JSS",
+    "rating": 49.12,
+    "rank": 51
+  },
+  {
+    "format": "T20",
+    "player": "Shaurya Dagar",
+    "short_team": "KCC",
+    "rating": 47.86,
+    "rank": 52
+  },
+  {
+    "format": "T20",
+    "player": "Manav Batra",
+    "short_team": "ABES",
+    "rating": 47.37,
+    "rank": 53
+  },
+  {
+    "format": "T20",
+    "player": "Dhruv Kashyap",
+    "short_team": "JSS",
+    "rating": 46.49,
+    "rank": 54
+  },
+  {
+    "format": "T20",
+    "player": "Kartik Chauhan",
+    "short_team": "ABES",
+    "rating": 45.88,
+    "rank": 55
+  },
+  {
+    "format": "T20",
+    "player": "Harsh Pandey",
+    "short_team": "GCET",
+    "rating": 45.15,
+    "rank": 56
+  },
+  {
+    "format": "T20",
+    "player": "Rahul Mishra",
+    "short_team": "GCET",
+    "rating": 44.04,
+    "rank": 57
+  },
+  {
+    "format": "T20",
+    "player": "Deepak Joshi",
+    "short_team": "GCET",
+    "rating": 43.46,
+    "rank": 58
+  },
+  {
+    "format": "T20",
+    "player": "Himanshu Dagar",
+    "short_team": "KCC",
+    "rating": 42.52,
+    "rank": 59
+  },
+  {
+    "format": "T20",
+    "player": "Kunal Yadav",
+    "short_team": "GCET",
+    "rating": 41.85,
+    "rank": 60
+  },
+  {
+    "format": "T20",
+    "player": "Shaurya Malik",
+    "short_team": "GLB",
+    "rating": 40.59,
+    "rank": 61
+  },
+  {
+    "format": "T20",
+    "player": "Manas Kapoor",
+    "short_team": "JSS",
+    "rating": 40.1,
+    "rank": 62
+  },
+  {
+    "format": "T20",
+    "player": "Aarush Bedi",
+    "short_team": "GLB",
+    "rating": 39.22,
+    "rank": 63
+  },
+  {
+    "format": "T20",
+    "player": "Parth Bansal",
+    "short_team": "KCC",
+    "rating": 38.61,
+    "rank": 64
+  },
+  {
+    "format": "T20",
+    "player": "Lakshya Goyal",
+    "short_team": "KCC",
+    "rating": 37.88,
+    "rank": 65
+  },
+  {
+    "format": "T20",
+    "player": "Sangam Singh",
+    "short_team": "ABES",
+    "rating": 36.77,
+    "rank": 66
+  },
+  {
+    "format": "T20",
+    "player": "Ritvik Bansal",
+    "short_team": "ABES",
+    "rating": 36.19,
+    "rank": 67
+  },
+  {
+    "format": "T20",
+    "player": "Kartikeya Singh",
+    "short_team": "JSS",
+    "rating": 35.25,
+    "rank": 68
+  },
+  {
+    "format": "T20",
+    "player": "Abhishek Raj",
+    "short_team": "GCET",
+    "rating": 34.58,
+    "rank": 69
+  },
+  {
+    "format": "T20",
+    "player": "Aarav Sharma",
+    "short_team": "GCET",
+    "rating": 33.32,
+    "rank": 70
+  },
+  {
+    "format": "T20",
+    "player": "Naman Tyagi",
+    "short_team": "ABES",
+    "rating": 32.83,
+    "rank": 71
+  },
+  {
+    "format": "T20",
+    "player": "Parth Sharma",
+    "short_team": "GLB",
+    "rating": 31.95,
+    "rank": 72
+  },
+  {
+    "format": "T20",
+    "player": "Lavish Chaudhary",
+    "short_team": "ABES",
+    "rating": 31.34,
+    "rank": 73
+  },
+  {
+    "format": "T20",
+    "player": "Abhishek Choudhary",
+    "short_team": "KCC",
+    "rating": 30.61,
+    "rank": 74
+  },
+  {
+    "format": "T20",
+    "player": "Adittya Bansal",
+    "short_team": "GLB",
+    "rating": 29.5,
+    "rank": 75
+  },
+  {
+    "format": "T20",
+    "player": "Lakshay Bisht",
+    "short_team": "JSS",
+    "rating": 28.92,
+    "rank": 76
+  },
+  {
+    "format": "T20",
+    "player": "Anshul Tiwari",
+    "short_team": "ABES",
+    "rating": 27.98,
+    "rank": 77
+  },
+  {
+    "format": "T20",
+    "player": "Aaryan Kapoor",
+    "short_team": "KCC",
+    "rating": 27.31,
+    "rank": 78
+  },
+  {
+    "format": "T20",
+    "player": "Rohan Verma",
+    "short_team": "GCET",
+    "rating": 26.05,
+    "rank": 79
+  },
+  {
+    "format": "T20",
+    "player": "Vatsal Nagar",
+    "short_team": "GLB",
+    "rating": 25.56,
+    "rank": 80
+  },
+  {
+    "format": "T20",
+    "player": "Vikrant Saini",
+    "short_team": "ABES",
+    "rating": 24.68,
+    "rank": 81
+  },
+  {
+    "format": "T20",
+    "player": "Rudra Pratap",
+    "short_team": "KCC",
+    "rating": 24.07,
+    "rank": 82
+  },
+  {
+    "format": "T20",
+    "player": "Ratan Sawrankar",
+    "short_team": "ABES",
+    "rating": 23.34,
+    "rank": 83
+  },
+  {
+    "format": "T20",
+    "player": "Siddharth Srivastava",
+    "short_team": "ABES",
+    "rating": 22.23,
+    "rank": 84
+  },
+  {
+    "format": "T20",
+    "player": "Sarthak Beniwal",
+    "short_team": "JSS",
+    "rating": 21.65,
+    "rank": 85
+  },
+  {
+    "format": "T20",
+    "player": "Abhay Tanwar",
+    "short_team": "GLB",
+    "rating": 20.71,
+    "rank": 86
+  },
+  {
+    "format": "T20",
+    "player": "Aviral Saxena",
+    "short_team": "JSS",
+    "rating": 20.04,
+    "rank": 87
+  },
+  {
+    "format": "T20",
+    "player": "Abeer Malhotra",
+    "short_team": "KCC",
+    "rating": 18.78,
+    "rank": 88
+  },
+  {
+    "format": "T20",
+    "player": "Yash Tiwari",
+    "short_team": "GCET",
+    "rating": 18.29,
+    "rank": 89
+  },
+  {
+    "format": "T20",
+    "player": "Abhinav Pal",
+    "short_team": "ABES",
+    "rating": 17.41,
+    "rank": 90
+  },
+  {
+    "format": "T20",
+    "player": "Devansh Kapoor",
+    "short_team": "KCC",
+    "rating": 16.8,
+    "rank": 91
+  },
+  {
+    "format": "T20",
+    "player": "Tushar Saini",
+    "short_team": "GLB",
+    "rating": 16.07,
+    "rank": 92
+  },
+  {
+    "format": "T20",
+    "player": "Aryan Tanwar",
+    "short_team": "KCC",
+    "rating": 14.96,
+    "rank": 93
+  },
+  {
+    "format": "T20",
+    "player": "Rajat Tyagi",
+    "short_team": "GLB",
+    "rating": 14.38,
+    "rank": 94
+  },
+  {
+    "format": "T20",
+    "player": "Raghav Bansal",
+    "short_team": "KCC",
+    "rating": 13.44,
+    "rank": 95
+  },
+  {
+    "format": "T20",
+    "player": "Deepanshu Gupta",
+    "short_team": "GLB",
+    "rating": 12.77,
+    "rank": 96
+  },
+  {
+    "format": "T20",
+    "player": "Kunal Bhadana",
+    "short_team": "KCC",
+    "rating": 11.51,
+    "rank": 97
+  },
+  {
+    "format": "T20",
+    "player": "Raghav Tripathi",
+    "short_team": "JSS",
+    "rating": 11.02,
+    "rank": 98
+  },
+  {
+    "format": "T20",
+    "player": "Ronav Kapoor",
+    "short_team": "GLB",
+    "rating": 10.14,
+    "rank": 99
+  },
+  {
+    "format": "T20",
+    "player": "Shreyansh Chaurasia",
+    "short_team": "JSS",
+    "rating": 9.53,
+    "rank": 100
+  },
+  {
+    "format": "Test",
+    "player": "Adarsh Yadav",
+    "short_team": "GLB",
+    "rating": 89.5,
+    "rank": 1
+  },
+  {
+    "format": "Test",
+    "player": "Ankit Bhadouria",
+    "short_team": "JSS",
+    "rating": 88.77,
+    "rank": 2
+  },
+  {
+    "format": "Test",
+    "player": "Ashish Kumar",
+    "short_team": "JSS",
+    "rating": 87.66,
+    "rank": 3
+  },
+  {
+    "format": "Test",
+    "player": "Divit Arora",
+    "short_team": "GLB",
+    "rating": 87.08,
+    "rank": 4
+  },
+  {
+    "format": "Test",
+    "player": "Gaurav Rajput",
+    "short_team": "ABES",
+    "rating": 86.14,
+    "rank": 5
+  },
+  {
+    "format": "Test",
+    "player": "Harshit Tomar",
+    "short_team": "ABES",
+    "rating": 85.47,
+    "rank": 6
+  },
+  {
+    "format": "Test",
+    "player": "Kaushik Mahur",
+    "short_team": "ABES",
+    "rating": 84.21,
+    "rank": 7
+  },
+  {
+    "format": "Test",
+    "player": "Keshav Rawat",
+    "short_team": "GLB",
+    "rating": 83.72,
+    "rank": 8
+  },
+  {
+    "format": "Test",
+    "player": "Krish Tyagi",
+    "short_team": "KCC",
+    "rating": 82.84,
+    "rank": 9
+  },
+  {
+    "format": "Test",
+    "player": "Kushagra Singh Thakur",
+    "short_team": "JSS",
+    "rating": 82.23,
+    "rank": 10
+  },
+  {
+    "format": "Test",
+    "player": "Mudit Chauhan",
+    "short_team": "GLB",
+    "rating": 81.5,
+    "rank": 11
+  },
+  {
+    "format": "Test",
+    "player": "Nikhil Saini",
+    "short_team": "GCET",
+    "rating": 80.39,
+    "rank": 12
+  },
+  {
+    "format": "Test",
+    "player": "Nishant Dagar",
+    "short_team": "JSS",
+    "rating": 79.81,
+    "rank": 13
+  },
+  {
+    "format": "Test",
+    "player": "Pranav Goyal",
+    "short_team": "GLB",
+    "rating": 78.87,
+    "rank": 14
+  },
+  {
+    "format": "Test",
+    "player": "Pratham Rawat",
+    "short_team": "JSS",
+    "rating": 78.2,
+    "rank": 15
+  },
+  {
+    "format": "Test",
+    "player": "Rishabh Jaiswal",
+    "short_team": "ABES",
+    "rating": 76.94,
+    "rank": 16
+  },
+  {
+    "format": "Test",
+    "player": "Rishit Verma",
+    "short_team": "KCC",
+    "rating": 76.45,
+    "rank": 17
+  },
+  {
+    "format": "Test",
+    "player": "Sangam Singh",
+    "short_team": "ABES",
+    "rating": 75.57,
+    "rank": 18
+  },
+  {
+    "format": "Test",
+    "player": "Saurabh Kumar",
+    "short_team": "GCET",
+    "rating": 74.96,
+    "rank": 19
+  },
+  {
+    "format": "Test",
+    "player": "Vedant Saini",
+    "short_team": "KCC",
+    "rating": 74.23,
+    "rank": 20
+  },
+  {
+    "format": "Test",
+    "player": "Yashvardhan Rana",
+    "short_team": "JSS",
+    "rating": 73.12,
+    "rank": 21
+  },
+  {
+    "format": "Test",
+    "player": "Yuvraj Meena",
+    "short_team": "ABES",
+    "rating": 72.54,
+    "rank": 22
+  },
+  {
+    "format": "Test",
+    "player": "Vihaan Dagar",
+    "short_team": "GLB",
+    "rating": 71.6,
+    "rank": 23
+  },
+  {
+    "format": "Test",
+    "player": "Samar Singh",
+    "short_team": "KCC",
+    "rating": 70.93,
+    "rank": 24
+  },
+  {
+    "format": "Test",
+    "player": "Shaurya Dagar",
+    "short_team": "KCC",
+    "rating": 69.67,
+    "rank": 25
+  },
+  {
+    "format": "Test",
+    "player": "Suyash Tomar",
+    "short_team": "GLB",
+    "rating": 69.18,
+    "rank": 26
+  },
+  {
+    "format": "Test",
+    "player": "Rudransh Tyagi",
+    "short_team": "JSS",
+    "rating": 68.3,
+    "rank": 27
+  },
+  {
+    "format": "Test",
+    "player": "Aayush Ahuja",
+    "short_team": "KCC",
+    "rating": 67.69,
+    "rank": 28
+  },
+  {
+    "format": "Test",
+    "player": "Ishaan Bhardwaj",
+    "short_team": "GLB",
+    "rating": 66.96,
+    "rank": 29
+  },
+  {
+    "format": "Test",
+    "player": "Aviral Saxena",
+    "short_team": "JSS",
+    "rating": 65.85,
+    "rank": 30
+  },
+  {
+    "format": "Test",
+    "player": "Mohini Sharma",
+    "short_team": "GLB",
+    "rating": 65.27,
+    "rank": 31
+  },
+  {
+    "format": "Test",
+    "player": "Devansh Singh",
+    "short_team": "ABES",
+    "rating": 64.33,
+    "rank": 32
+  },
+  {
+    "format": "Test",
+    "player": "Mohit Kumar",
+    "short_team": "GCET",
+    "rating": 63.66,
+    "rank": 33
+  },
+  {
+    "format": "Test",
+    "player": "Lakshya Goyal",
+    "short_team": "KCC",
+    "rating": 62.4,
+    "rank": 34
+  },
+  {
+    "format": "Test",
+    "player": "Rudra Pratap",
+    "short_team": "KCC",
+    "rating": 61.91,
+    "rank": 35
+  },
+  {
+    "format": "Test",
+    "player": "Nakul Bhatia",
+    "short_team": "KCC",
+    "rating": 61.03,
+    "rank": 36
+  },
+  {
+    "format": "Test",
+    "player": "Anmol Chauhan",
+    "short_team": "KCC",
+    "rating": 60.42,
+    "rank": 37
+  },
+  {
+    "format": "Test",
+    "player": "Nakul Chaudhary",
+    "short_team": "GLB",
+    "rating": 59.69,
+    "rank": 38
+  },
+  {
+    "format": "Test",
+    "player": "Yatin Sharma",
+    "short_team": "KCC",
+    "rating": 58.58,
+    "rank": 39
+  },
+  {
+    "format": "Test",
+    "player": "Devendra Pal",
+    "short_team": "JSS",
+    "rating": 58.0,
+    "rank": 40
+  },
+  {
+    "format": "Test",
+    "player": "Raghav Tripathi",
+    "short_team": "JSS",
+    "rating": 57.06,
+    "rank": 41
+  },
+  {
+    "format": "Test",
+    "player": "Aarush Bedi",
+    "short_team": "GLB",
+    "rating": 56.39,
+    "rank": 42
+  },
+  {
+    "format": "Test",
+    "player": "Devansh Sharma",
+    "short_team": "GCET",
+    "rating": 55.13,
+    "rank": 43
+  },
+  {
+    "format": "Test",
+    "player": "Parth Bansal",
+    "short_team": "KCC",
+    "rating": 54.64,
+    "rank": 44
+  },
+  {
+    "format": "Test",
+    "player": "Manav Batra",
+    "short_team": "ABES",
+    "rating": 53.76,
+    "rank": 45
+  },
+  {
+    "format": "Test",
+    "player": "Kunal Bhadana",
+    "short_team": "KCC",
+    "rating": 53.15,
+    "rank": 46
+  },
+  {
+    "format": "Test",
+    "player": "Anubhav Yadav",
+    "short_team": "JSS",
+    "rating": 52.42,
+    "rank": 47
+  },
+  {
+    "format": "Test",
+    "player": "Kartikeya Singh",
+    "short_team": "JSS",
+    "rating": 51.31,
+    "rank": 48
+  },
+  {
+    "format": "Test",
+    "player": "Arjun Patel",
+    "short_team": "GCET",
+    "rating": 50.73,
+    "rank": 49
+  },
+  {
+    "format": "Test",
+    "player": "Ayush Dubey",
+    "short_team": "ABES",
+    "rating": 49.79,
+    "rank": 50
+  },
+  {
+    "format": "Test",
+    "player": "Aryan Tanwar",
+    "short_team": "KCC",
+    "rating": 49.12,
+    "rank": 51
+  },
+  {
+    "format": "Test",
+    "player": "Arnav Chauhan",
+    "short_team": "JSS",
+    "rating": 47.86,
+    "rank": 52
+  },
+  {
+    "format": "Test",
+    "player": "Shivank Tomar",
+    "short_team": "JSS",
+    "rating": 47.37,
+    "rank": 53
+  },
+  {
+    "format": "Test",
+    "player": "Manish Rawat",
+    "short_team": "GCET",
+    "rating": 46.49,
+    "rank": 54
+  },
+  {
+    "format": "Test",
+    "player": "Tushar Saini",
+    "short_team": "GLB",
+    "rating": 45.88,
+    "rank": 55
+  },
+  {
+    "format": "Test",
+    "player": "Abhishek Choudhary",
+    "short_team": "KCC",
+    "rating": 45.15,
+    "rank": 56
+  },
+  {
+    "format": "Test",
+    "player": "Kartik Chauhan",
+    "short_team": "ABES",
+    "rating": 44.04,
+    "rank": 57
+  },
+  {
+    "format": "Test",
+    "player": "Shivam Chauhan",
+    "short_team": "GCET",
+    "rating": 43.46,
+    "rank": 58
+  },
+  {
+    "format": "Test",
+    "player": "Shaurya Malik",
+    "short_team": "GLB",
+    "rating": 42.52,
+    "rank": 59
+  },
+  {
+    "format": "Test",
+    "player": "Aaryan Kapoor",
+    "short_team": "KCC",
+    "rating": 41.85,
+    "rank": 60
+  },
+  {
+    "format": "Test",
+    "player": "Aman Bhardwaj",
+    "short_team": "ABES",
+    "rating": 40.59,
+    "rank": 61
+  },
+  {
+    "format": "Test",
+    "player": "Ayush Gupta",
+    "short_team": "GCET",
+    "rating": 40.1,
+    "rank": 62
+  },
+  {
+    "format": "Test",
+    "player": "Samarjeet Singh",
+    "short_team": "ABES",
+    "rating": 39.22,
+    "rank": 63
+  },
+  {
+    "format": "Test",
+    "player": "Ankit Kumar",
+    "short_team": "GCET",
+    "rating": 38.61,
+    "rank": 64
+  },
+  {
+    "format": "Test",
+    "player": "Parth Sharma",
+    "short_team": "GLB",
+    "rating": 37.88,
+    "rank": 65
+  },
+  {
+    "format": "Test",
+    "player": "Vivek Yadav",
+    "short_team": "GCET",
+    "rating": 36.77,
+    "rank": 66
+  },
+  {
+    "format": "Test",
+    "player": "Abeer Malhotra",
+    "short_team": "KCC",
+    "rating": 36.19,
+    "rank": 67
+  },
+  {
+    "format": "Test",
+    "player": "Ronav Kapoor",
+    "short_team": "GLB",
+    "rating": 35.25,
+    "rank": 68
+  },
+  {
+    "format": "Test",
+    "player": "Siddharth Srivastava",
+    "short_team": "ABES",
+    "rating": 34.58,
+    "rank": 69
+  },
+  {
+    "format": "Test",
+    "player": "Naman Tyagi",
+    "short_team": "ABES",
+    "rating": 33.32,
+    "rank": 70
+  },
+  {
+    "format": "Test",
+    "player": "Harsh Pandey",
+    "short_team": "GCET",
+    "rating": 32.83,
+    "rank": 71
+  },
+  {
+    "format": "Test",
+    "player": "Deepanshu Gupta",
+    "short_team": "GLB",
+    "rating": 31.95,
+    "rank": 72
+  },
+  {
+    "format": "Test",
+    "player": "Anshul Tiwari",
+    "short_team": "ABES",
+    "rating": 31.34,
+    "rank": 73
+  },
+  {
+    "format": "Test",
+    "player": "Shreyansh Chaurasia",
+    "short_team": "JSS",
+    "rating": 30.61,
+    "rank": 74
+  },
+  {
+    "format": "Test",
+    "player": "Devansh Kapoor",
+    "short_team": "KCC",
+    "rating": 29.5,
+    "rank": 75
+  },
+  {
+    "format": "Test",
+    "player": "Aditya Singh",
+    "short_team": "GCET",
+    "rating": 28.92,
+    "rank": 76
+  },
+  {
+    "format": "Test",
+    "player": "Rajat Tyagi",
+    "short_team": "GLB",
+    "rating": 27.98,
+    "rank": 77
+  },
+  {
+    "format": "Test",
+    "player": "Himanshu Dagar",
+    "short_team": "KCC",
+    "rating": 27.31,
+    "rank": 78
+  },
+  {
+    "format": "Test",
+    "player": "Dhruv Kashyap",
+    "short_team": "JSS",
+    "rating": 26.05,
+    "rank": 79
+  },
+  {
+    "format": "Test",
+    "player": "Vatsal Nagar",
+    "short_team": "GLB",
+    "rating": 25.56,
+    "rank": 80
+  },
+  {
+    "format": "Test",
+    "player": "Abhay Tanwar",
+    "short_team": "GLB",
+    "rating": 24.68,
+    "rank": 81
+  },
+  {
+    "format": "Test",
+    "player": "Vikrant Saini",
+    "short_team": "ABES",
+    "rating": 24.07,
+    "rank": 82
+  },
+  {
+    "format": "Test",
+    "player": "Lakshay Bisht",
+    "short_team": "JSS",
+    "rating": 23.34,
+    "rank": 83
+  },
+  {
+    "format": "Test",
+    "player": "Priyanshu Gupta",
+    "short_team": "GCET",
+    "rating": 22.23,
+    "rank": 84
+  },
+  {
+    "format": "Test",
+    "player": "Manas Kapoor",
+    "short_team": "JSS",
+    "rating": 21.65,
+    "rank": 85
+  },
+  {
+    "format": "Test",
+    "player": "Lavish Chaudhary",
+    "short_team": "ABES",
+    "rating": 20.71,
+    "rank": 86
+  },
+  {
+    "format": "Test",
+    "player": "Raghav Bansal",
+    "short_team": "KCC",
+    "rating": 20.04,
+    "rank": 87
+  },
+  {
+    "format": "Test",
+    "player": "Abhinav Pal",
+    "short_team": "ABES",
+    "rating": 18.78,
+    "rank": 88
+  },
+  {
+    "format": "Test",
+    "player": "Adittya Bansal",
+    "short_team": "GLB",
+    "rating": 18.29,
+    "rank": 89
+  },
+  {
+    "format": "Test",
+    "player": "Rohan Verma",
+    "short_team": "GCET",
+    "rating": 17.41,
+    "rank": 90
+  },
+  {
+    "format": "Test",
+    "player": "Kunal Yadav",
+    "short_team": "GCET",
+    "rating": 16.8,
+    "rank": 91
+  },
+  {
+    "format": "Test",
+    "player": "Ratan Sawrankar",
+    "short_team": "ABES",
+    "rating": 16.07,
+    "rank": 92
+  },
+  {
+    "format": "Test",
+    "player": "Aarav Sharma",
+    "short_team": "GCET",
+    "rating": 14.96,
+    "rank": 93
+  },
+  {
+    "format": "Test",
+    "player": "Abhishek Raj",
+    "short_team": "GCET",
+    "rating": 14.38,
+    "rank": 94
+  },
+  {
+    "format": "Test",
+    "player": "Ritvik Bansal",
+    "short_team": "ABES",
+    "rating": 13.44,
+    "rank": 95
+  },
+  {
+    "format": "Test",
+    "player": "Tanishq Agarwal",
+    "short_team": "JSS",
+    "rating": 12.77,
+    "rank": 96
+  },
+  {
+    "format": "Test",
+    "player": "Deepak Joshi",
+    "short_team": "GCET",
+    "rating": 11.51,
+    "rank": 97
+  },
+  {
+    "format": "Test",
+    "player": "Rahul Mishra",
+    "short_team": "GCET",
+    "rating": 11.02,
+    "rank": 98
+  },
+  {
+    "format": "Test",
+    "player": "Sarthak Beniwal",
+    "short_team": "JSS",
+    "rating": 10.14,
+    "rank": 99
+  },
+  {
+    "format": "Test",
+    "player": "Yash Tiwari",
+    "short_team": "GCET",
+    "rating": 9.53,
+    "rank": 100
+  }
+]

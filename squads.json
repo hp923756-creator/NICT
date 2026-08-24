@@ -1,0 +1,712 @@
+{
+  "GCET": [
+    {
+      "name": "Aarav Sharma",
+      "role": "Captain / Opening Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Harsh Pandey",
+      "role": "Opening Batter / Part-time Bowler",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm part-time",
+      "playing_xi": true
+    },
+    {
+      "name": "Abhishek Raj",
+      "role": "Wicketkeeper-Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Deepak Joshi",
+      "role": "Wicketkeeper-Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Kunal Yadav",
+      "role": "Middle-order Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Rahul Mishra",
+      "role": "Finisher",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Rohan Verma",
+      "role": "Top-order Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Yash Tiwari",
+      "role": "Middle-order Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Aditya Singh",
+      "role": "Vice-Captain / All-rounder",
+      "batting_style": "Left-hand",
+      "bowling_style": "Right-arm Medium",
+      "playing_xi": true
+    },
+    {
+      "name": "Ankit Kumar",
+      "role": "All-rounder",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Medium",
+      "playing_xi": true
+    },
+    {
+      "name": "Ayush Gupta",
+      "role": "Bowling All-rounder",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Fast-Medium",
+      "playing_xi": true
+    },
+    {
+      "name": "Priyanshu Gupta",
+      "role": "Batting All-rounder",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Medium",
+      "playing_xi": false
+    },
+    {
+      "name": "Shivam Chauhan",
+      "role": "Batting All-rounder",
+      "batting_style": "Left-hand",
+      "bowling_style": "Right-arm Off-spin",
+      "playing_xi": false
+    },
+    {
+      "name": "Vivek Yadav",
+      "role": "Bowling All-rounder",
+      "batting_style": "Left-hand",
+      "bowling_style": "Right-arm Off-spin",
+      "playing_xi": false
+    },
+    {
+      "name": "Arjun Patel",
+      "role": "Fast-Medium Bowler",
+      "batting_style": "Left-hand",
+      "bowling_style": "Left-arm Fast-Medium",
+      "playing_xi": false
+    },
+    {
+      "name": "Devansh Sharma",
+      "role": "Fast Bowler",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Fast",
+      "playing_xi": false
+    },
+    {
+      "name": "Manish Rawat",
+      "role": "Spin Bowler",
+      "batting_style": "Left-hand",
+      "bowling_style": "Left-arm Orthodox",
+      "playing_xi": false
+    },
+    {
+      "name": "Mohit Kumar",
+      "role": "Fast Bowler",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Fast",
+      "playing_xi": false
+    },
+    {
+      "name": "Nikhil Saini",
+      "role": "Spin Bowler",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Leg-spin",
+      "playing_xi": false
+    },
+    {
+      "name": "Saurabh Kumar",
+      "role": "Medium Pacer",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Medium",
+      "playing_xi": false
+    }
+  ],
+  "ABES": [
+    {
+      "name": "Naman Tyagi",
+      "role": "Opening Batsman",
+      "batting_style": "Left-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Vikrant Saini",
+      "role": "Captain / Opening Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Medium",
+      "playing_xi": true
+    },
+    {
+      "name": "Kartik Chauhan",
+      "role": "Wicketkeeper-Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Siddharth Srivastava",
+      "role": "Wicketkeeper-Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Abhinav Pal",
+      "role": "Middle-order Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Anshul Tiwari",
+      "role": "Finisher",
+      "batting_style": "Left-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Lavish Chaudhary",
+      "role": "Middle-order Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Ratan Sawrankar",
+      "role": "Middle-order Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Ritvik Bansal",
+      "role": "Top-order Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Aman Bhardwaj",
+      "role": "All-rounder",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Medium",
+      "playing_xi": true
+    },
+    {
+      "name": "Ayush Dubey",
+      "role": "Bowling All-rounder",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Medium",
+      "playing_xi": true
+    },
+    {
+      "name": "Manav Batra",
+      "role": "Spin All-rounder",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Off-spin",
+      "playing_xi": false
+    },
+    {
+      "name": "Samarjeet Singh",
+      "role": "All-rounder",
+      "batting_style": "Left-hand",
+      "bowling_style": "Left-arm Orthodox",
+      "playing_xi": false
+    },
+    {
+      "name": "Sangam Singh",
+      "role": "Bowling All-rounder",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Off-spin",
+      "playing_xi": false
+    },
+    {
+      "name": "Devansh Singh",
+      "role": "Fast-Medium Bowler",
+      "batting_style": "Left-hand",
+      "bowling_style": "Left-arm Fast-Medium",
+      "playing_xi": false
+    },
+    {
+      "name": "Gaurav Rajput",
+      "role": "Fast Bowler",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Fast",
+      "playing_xi": false
+    },
+    {
+      "name": "Harshit Tomar",
+      "role": "Leg-spinner",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Leg-spin",
+      "playing_xi": false
+    },
+    {
+      "name": "Kaushik Mahur",
+      "role": "Medium Pacer",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Medium",
+      "playing_xi": false
+    },
+    {
+      "name": "Rishabh Jaiswal",
+      "role": "Medium Pacer",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Medium",
+      "playing_xi": false
+    },
+    {
+      "name": "Yuvraj Meena",
+      "role": "Fast Bowler",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Fast",
+      "playing_xi": false
+    }
+  ],
+  "JSS": [
+    {
+      "name": "Kartikeya Singh",
+      "role": "Opening Batsman",
+      "batting_style": "Left-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Shreyansh Chaurasia",
+      "role": "Opening Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Dhruv Kashyap",
+      "role": "Wicketkeeper-Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Raghav Tripathi",
+      "role": "Wicketkeeper-Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Aviral Saxena",
+      "role": "Middle-order Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Lakshay Bisht",
+      "role": "Middle-order Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Manas Kapoor",
+      "role": "Finisher",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Off-spin",
+      "playing_xi": true
+    },
+    {
+      "name": "Sarthak Beniwal",
+      "role": "Finisher",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Tanishq Agarwal",
+      "role": "Top-order Batsman",
+      "batting_style": "Left-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Anubhav Yadav",
+      "role": "Captain / All-rounder",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Medium",
+      "playing_xi": true
+    },
+    {
+      "name": "Arnav Chauhan",
+      "role": "Batting All-rounder",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Medium",
+      "playing_xi": true
+    },
+    {
+      "name": "Devendra Pal",
+      "role": "All-rounder",
+      "batting_style": "Left-hand",
+      "bowling_style": "Left-arm Medium",
+      "playing_xi": false
+    },
+    {
+      "name": "Shivank Tomar",
+      "role": "Bowling All-rounder",
+      "batting_style": "Left-hand",
+      "bowling_style": "Left-arm Orthodox",
+      "playing_xi": false
+    },
+    {
+      "name": "Ankit Bhadouria",
+      "role": "Off-spinner",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Off-spin",
+      "playing_xi": false
+    },
+    {
+      "name": "Ashish Kumar",
+      "role": "Fast Bowler",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Fast",
+      "playing_xi": false
+    },
+    {
+      "name": "Kushagra Singh Thakur",
+      "role": "Fast-Medium Bowler",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Fast-Medium",
+      "playing_xi": false
+    },
+    {
+      "name": "Nishant Dagar",
+      "role": "Medium Pacer",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Medium",
+      "playing_xi": false
+    },
+    {
+      "name": "Pratham Rawat",
+      "role": "Leg-spinner",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Leg-spin",
+      "playing_xi": false
+    },
+    {
+      "name": "Rudransh Tyagi",
+      "role": "Fast-Medium Bowler",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Fast-Medium",
+      "playing_xi": false
+    },
+    {
+      "name": "Yashvardhan Rana",
+      "role": "Fast Bowler",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Fast",
+      "playing_xi": false
+    }
+  ],
+  "GLB": [
+    {
+      "name": "Abhay Tanwar",
+      "role": "Opening Batsman",
+      "batting_style": "Left-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Deepanshu Gupta",
+      "role": "Opening Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Medium",
+      "playing_xi": true
+    },
+    {
+      "name": "Tushar Saini",
+      "role": "Wicketkeeper-Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Vatsal Nagar",
+      "role": "Wicketkeeper-Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Adittya Bansal",
+      "role": "Captain / Top-order Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Parth Sharma",
+      "role": "Middle-order Batsman",
+      "batting_style": "Left-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Rajat Tyagi",
+      "role": "Middle-order Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Ronav Kapoor",
+      "role": "Middle-order Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Shaurya Malik",
+      "role": "Finisher",
+      "batting_style": "Left-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Aarush Bedi",
+      "role": "Batting All-rounder",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Medium",
+      "playing_xi": true
+    },
+    {
+      "name": "Mohini Sharma",
+      "role": "All-rounder",
+      "batting_style": "Left-hand",
+      "bowling_style": "Left-arm Medium",
+      "playing_xi": true
+    },
+    {
+      "name": "Nakul Chaudhary",
+      "role": "All-rounder",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Off-spin",
+      "playing_xi": false
+    },
+    {
+      "name": "Vihaan Dagar",
+      "role": "Bowling All-rounder",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Medium",
+      "playing_xi": false
+    },
+    {
+      "name": "Adarsh Yadav",
+      "role": "Leg-spinner",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Leg-spin",
+      "playing_xi": false
+    },
+    {
+      "name": "Divit Arora",
+      "role": "Medium Pacer",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Medium",
+      "playing_xi": false
+    },
+    {
+      "name": "Ishaan Bhardwaj",
+      "role": "Fast-Medium Bowler",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Fast-Medium",
+      "playing_xi": false
+    },
+    {
+      "name": "Keshav Rawat",
+      "role": "Off-spinner",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Off-spin",
+      "playing_xi": false
+    },
+    {
+      "name": "Mudit Chauhan",
+      "role": "Spin Bowler",
+      "batting_style": "Left-hand",
+      "bowling_style": "Left-arm Orthodox",
+      "playing_xi": false
+    },
+    {
+      "name": "Pranav Goyal",
+      "role": "Fast Bowler",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Fast",
+      "playing_xi": false
+    },
+    {
+      "name": "Suyash Tomar",
+      "role": "Fast Bowler",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Fast",
+      "playing_xi": false
+    }
+  ],
+  "KCC": [
+    {
+      "name": "Aryan Tanwar",
+      "role": "Opening Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Raghav Bansal",
+      "role": "Captain / Opening Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Aaryan Kapoor",
+      "role": "Wicketkeeper-Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Rudra Pratap",
+      "role": "Wicketkeeper-Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Abeer Malhotra",
+      "role": "Finisher",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Medium",
+      "playing_xi": true
+    },
+    {
+      "name": "Abhishek Choudhary",
+      "role": "Top-order Batsman",
+      "batting_style": "Left-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Devansh Kapoor",
+      "role": "Middle-order Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Himanshu Dagar",
+      "role": "Finisher",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Kunal Bhadana",
+      "role": "Middle-order Batsman",
+      "batting_style": "Right-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Parth Bansal",
+      "role": "Middle-order Batsman",
+      "batting_style": "Left-hand",
+      "bowling_style": "\u2014",
+      "playing_xi": true
+    },
+    {
+      "name": "Lakshya Goyal",
+      "role": "All-rounder",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Off-spin",
+      "playing_xi": true
+    },
+    {
+      "name": "Nakul Bhatia",
+      "role": "All-rounder",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Medium",
+      "playing_xi": false
+    },
+    {
+      "name": "Shaurya Dagar",
+      "role": "Bowling All-rounder",
+      "batting_style": "Left-hand",
+      "bowling_style": "Left-arm Orthodox",
+      "playing_xi": false
+    },
+    {
+      "name": "Yatin Sharma",
+      "role": "Batting All-rounder",
+      "batting_style": "Left-hand",
+      "bowling_style": "Left-arm Medium",
+      "playing_xi": false
+    },
+    {
+      "name": "Aayush Ahuja",
+      "role": "Fast-Medium Bowler",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Fast-Medium",
+      "playing_xi": false
+    },
+    {
+      "name": "Anmol Chauhan",
+      "role": "Medium Pacer",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Medium",
+      "playing_xi": false
+    },
+    {
+      "name": "Krish Tyagi",
+      "role": "Fast Bowler",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Fast",
+      "playing_xi": false
+    },
+    {
+      "name": "Rishit Verma",
+      "role": "Leg-spinner",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Leg-spin",
+      "playing_xi": false
+    },
+    {
+      "name": "Samar Singh",
+      "role": "Fast Bowler",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Fast",
+      "playing_xi": false
+    },
+    {
+      "name": "Vedant Saini",
+      "role": "Off-spinner",
+      "batting_style": "Right-hand",
+      "bowling_style": "Right-arm Off-spin",
+      "playing_xi": false
+    }
+  ]
+}

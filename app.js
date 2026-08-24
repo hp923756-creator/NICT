@@ -1,6 +1,6 @@
 
 const DATA={}; let view="home", currentPlayer="", liveTimer=null, rankingFormat="T20", recordFormat="T20";
-const BALL_DELAY_SECONDS=25, OVER_BREAK_SECONDS=60, TOSS_BREAK_SECONDS=900;
+const BALL_DELAY_SECONDS=30, OVER_BREAK_SECONDS=60, INNINGS_BREAK_SECONDS=900, TOSS_BREAK_SECONDS=900;
 const app=document.getElementById("app");
 const TEAM_MAP={
  "Galgotia College Cricket Club":"GCET","Galgotia College":"GCET","GCCC":"GCET","GCET":"GCET",
@@ -69,7 +69,7 @@ function matches(){
  const rows=(DATA.live_matches||[]).map((m,i)=>`<tr><td>${esc(m.match_id||"MATCH-"+(i+1))}</td><td>${esc(m.format||"")}</td><td><b>${esc(st(m.team_a))}</b> vs <b>${esc(st(m.team_b))}</b></td><td><span class="pill ${m.status==="completed"?"":"live-pill"}">${esc(m.status||"Replay")}</span></td><td><button class="btn" onclick="startLive(${i})">Watch</button></td></tr>`);
  app.innerHTML=head("Matches","Every uploaded match is normalized to short team names")+table(["Match","Format","Teams","Status",""],rows);
 }
-function startLive(i){localStorage.setItem("nict_active_match",String(i));view="live";render()}
+function startLive(i){localStorage.setItem("nict_active_match",String(i));replayStart=Date.now();localStorage.setItem("nict_replay_start",String(replayStart));view="live";render()}
 
 function getActiveMatch(){
  const i=Number(localStorage.getItem("nict_active_match")||0);
@@ -159,20 +159,68 @@ function deliveryIndex(ds,elapsed){
  }
  return ds.length;
 }
-function eventLabel(event){return event.type==="toss"?"Toss break":event.type==="tea"?"Tea break":event.type==="drinks"?"Drinks break":event.type==="rain"?"Rain suspension":event.type==="draw"?"Match drawn":"Match in progress"}
+function formatCountdown(seconds){
+ const s=Math.max(0,Math.ceil(Number(seconds||0)));
+ const m=Math.floor(s/60),r=s%60;
+ return `${String(m).padStart(2,"0")}:${String(r).padStart(2,"0")}`;
+}
+function eventLabel(event){
+ if(event.type==="toss")return `Toss result confirmed · First ball in ${formatCountdown(event.remaining)}`;
+ if(event.type==="innings_break")return `Innings break · Second innings in ${formatCountdown(event.remaining)}`;
+ if(event.type==="tea")return `Tea break · Play resumes in ${formatCountdown(event.remaining)}`;
+ if(event.type==="drinks")return `Drinks break · Play resumes in ${formatCountdown(event.remaining)}`;
+ if(event.type==="rain")return "Rain suspension";
+ if(event.type==="draw")return "Match drawn";
+ return "Match in progress";
+}
 function getReplayState(ds,elapsed,m){
- let time=0,events=[...(m.events||[])].sort((a,b)=>Number(a.afterBall)-Number(b.afterBall));
- if(m.toss_winner){if(elapsed<TOSS_BREAK_SECONDS)return {idx:0,event:{type:"toss"}};time=TOSS_BREAK_SECONDS}
+ let time=0;
+ const events=[...(m.events||[])].sort((a,b)=>Number(a.afterBall)-Number(b.afterBall));
+
+ // Toss result is shown first. The first delivery starts 15 minutes later.
+ if(m.toss_winner){
+   if(elapsed<TOSS_BREAK_SECONDS){
+     return {idx:0,event:{type:"toss",remaining:Math.max(0,TOSS_BREAK_SECONDS-elapsed)}};
+   }
+   time=TOSS_BREAK_SECONDS;
+ }
+
  for(let i=0;i<=ds.length;i++){
+   // Manual events configured in Admin.
    for(const event of events.filter(x=>Number(x.afterBall)===i)){
      if(event.type==="draw")return {idx:i,event};
      if(event.type==="rain"&&!event.resumed)return {idx:i,event};
      const pause=event.type==="tea"?900:event.type==="drinks"?300:0;
-     if(elapsed<time+pause)return {idx:i,event};
-     time+=pause;
+     if(pause){
+       if(elapsed<time+pause){
+         return {idx:i,event:{...event,remaining:Math.max(0,time+pause-elapsed)}};
+       }
+       time+=pause;
+     }
    }
+
+   // Automatic 15-minute break when innings changes.
+   if(i>0 && i<ds.length &&
+      Number(ds[i].innings||1)!==Number(ds[i-1].innings||1)){
+     if(elapsed<time+INNINGS_BREAK_SECONDS){
+       return {
+         idx:i,
+         event:{
+           type:"innings_break",
+           remaining:Math.max(0,time+INNINGS_BREAK_SECONDS-elapsed)
+         }
+       };
+     }
+     time+=INNINGS_BREAK_SECONDS;
+   }
+
    if(i===ds.length)return {idx:i,event:null};
-  const previous=i?ds[i-1]:null,overBreak=previous&&legalBall(previous)&&legalCountBefore(ds,i)%6===0?OVER_BREAK_SECONDS:0,duration=BALL_DELAY_SECONDS+overBreak;
+
+   const previous=i?ds[i-1]:null;
+   const overBreak=previous&&legalBall(previous)&&legalCountBefore(ds,i)%6===0
+     ?OVER_BREAK_SECONDS:0;
+   const duration=BALL_DELAY_SECONDS+overBreak;
+
    if(elapsed<time+duration)return {idx:i,event:null};
    time+=duration;
  }
@@ -266,8 +314,8 @@ function playingXI(m,a,b){
 }
 
 function teamsPage(){const rows=DATA.teams.map(t=>`<tr><td>${logo(t.short_team,"mini-logo")} <b>${esc(t.short_team)}</b></td><td>${t.matches}</td><td>${t.wins}</td><td>${t.losses}</td><td>${t.no_results}</td><td>${t.win_percentage}%</td></tr>`);app.innerHTML=head("Teams","Every team has 20 registered players · 11 playing XI + 9 standby")+table(["Team","Matches","Wins","Losses","NR","Win %"],rows)}
-function playersPage(){const rows=DATA.career_records.map(p=>`<tr><td>${playerLink(p.name)}</td><td>${p.team}</td><td>${esc(p.role)}</td><td>${fmt(p.runs)}</td><td>${p.average}</td><td>${p.hundreds}</td><td>${p.fifty_plus}</td><td>${p.wickets}</td><td>${p.catches}</td></tr>`);app.innerHTML=head("Players","100-player tournament database")+`<input id="ps" class="input search" placeholder="Search player or team">`+table(["Player","Team","Role","Runs","Avg","100s","50+","Wkts","Catches"],rows);document.getElementById("ps").oninput=e=>{let q=e.target.value.toLowerCase();document.querySelectorAll(".table tbody tr").forEach(r=>r.style.display=r.innerText.toLowerCase().includes(q)?"":"none")}}
-function playerPage(){const p=DATA.career_records.find(x=>x.name===currentPlayer);if(!p)return playersPage();const fs=DATA.players_format.filter(x=>x.name===p.name);const rows=fs.map(x=>`<tr><td>${x.format}</td><td>${x.matches}</td><td>${x.innings}</td><td><b>${fmt(x.runs)}</b></td><td>${x.average}</td><td>${x.hundreds}</td><td>${x.fifty_plus}</td><td>${x.fours}</td><td>${x.sixes}</td><td>${x.strike_rate}</td><td>${x.wickets}</td></tr>`);app.innerHTML=head(p.name,`${p.team} · ${p.role} · ${p.batting_style} · ${p.bowling_style}`)+`<div class="grid"><div class="card"><h3>Career Runs</h3><div class="big">${fmt(p.runs)}</div></div><div class="card"><h3>Career Average</h3><div class="big">${p.average}</div></div><div class="card"><h3>100s</h3><div class="big">${p.hundreds}</div></div><div class="card"><h3>50+ Scores</h3><div class="big">${p.fifty_plus}</div></div></div><div class="section"><h2>Total Runs by Format</h2><div class="grid"><div class="card"><h3>Test Runs</h3><div class="big">${fmt(p.test_runs)}</div></div><div class="card"><h3>ODI Runs</h3><div class="big">${fmt(p.odi_runs)}</div></div><div class="card"><h3>T20 Runs</h3><div class="big">${fmt(p.t20_runs)}</div></div><div class="card"><h3>Career Total</h3><div class="big">${fmt(p.career_runs)}</div></div></div></div><div class="section"><h2>Career by format</h2>${table(["Format","Mat","Inn","Runs","Avg","100s","50+","4s","6s","SR","Wkts"],rows)}</div><div class="section"><h2>Individual records</h2><div class="record-grid"><div class="card">${record("Highest Score",p.highest)}${record("Fours",p.fours)}${record("Sixes",p.sixes)}${record("Wickets",p.wickets)}</div><div class="card">${record("Catches",p.catches)}${record("Stumpings",p.stumpings)}${record("Run-outs",p.runouts)}${record("Matches",p.matches)}</div></div></div>`}
+function playersPage(){const rows=mergedCareerRecords().map(p=>`<tr><td>${playerLink(p.name)}</td><td>${p.team}</td><td>${esc(p.role)}</td><td>${fmt(p.runs)}</td><td>${p.average}</td><td>${p.hundreds}</td><td>${p.fifty_plus}</td><td>${p.wickets}</td><td>${p.catches}</td></tr>`);app.innerHTML=head("Players","100-player tournament database")+`<input id="ps" class="input search" placeholder="Search player or team">`+table(["Player","Team","Role","Runs","Avg","100s","50+","Wkts","Catches"],rows);document.getElementById("ps").oninput=e=>{let q=e.target.value.toLowerCase();document.querySelectorAll(".table tbody tr").forEach(r=>r.style.display=r.innerText.toLowerCase().includes(q)?"":"none")}}
+function playerPage(){const p=mergedCareerRecords().find(x=>x.name===currentPlayer);if(!p)return playersPage();const fs=DATA.players_format.filter(x=>x.name===p.name);const rows=fs.map(x=>`<tr><td>${x.format}</td><td>${x.matches}</td><td>${x.innings}</td><td><b>${fmt(x.runs)}</b></td><td>${x.average}</td><td>${x.hundreds}</td><td>${x.fifty_plus}</td><td>${x.fours}</td><td>${x.sixes}</td><td>${x.strike_rate}</td><td>${x.wickets}</td></tr>`);app.innerHTML=head(p.name,`${p.team} · ${p.role} · ${p.batting_style} · ${p.bowling_style}`)+`<div class="grid"><div class="card"><h3>Career Runs</h3><div class="big">${fmt(p.runs)}</div></div><div class="card"><h3>Career Average</h3><div class="big">${p.average}</div></div><div class="card"><h3>100s</h3><div class="big">${p.hundreds}</div></div><div class="card"><h3>50+ Scores</h3><div class="big">${p.fifty_plus}</div></div></div><div class="section"><h2>Total Runs by Format</h2><div class="grid"><div class="card"><h3>Test Runs</h3><div class="big">${fmt(p.test_runs)}</div></div><div class="card"><h3>ODI Runs</h3><div class="big">${fmt(p.odi_runs)}</div></div><div class="card"><h3>T20 Runs</h3><div class="big">${fmt(p.t20_runs)}</div></div><div class="card"><h3>Career Total</h3><div class="big">${fmt(p.career_runs)}</div></div></div></div><div class="section"><h2>Career by format</h2>${table(["Format","Mat","Inn","Runs","Avg","100s","50+","4s","6s","SR","Wkts"],rows)}</div><div class="section"><h2>Individual records</h2><div class="record-grid"><div class="card">${record("Highest Score",p.highest)}${record("Fours",p.fours)}${record("Sixes",p.sixes)}${record("Wickets",p.wickets)}</div><div class="card">${record("Catches",p.catches)}${record("Stumpings",p.stumpings)}${record("Run-outs",p.runouts)}${record("Matches",p.matches)}</div></div></div>`}
 function record(a,b){return `<div class="record-item"><span>${a}</span><b>${b}</b></div>`}
 
 function formatPicker(){return `<label class="format-picker">Format <select id="rankingFormat" class="input"><option>T20</option><option>ODI</option><option>Test</option></select></label>`}
@@ -279,7 +327,7 @@ function allRoundRankings(){const arr=DATA.ratings.filter(x=>x.format===rankingF
 function recordFormatPicker(){return `<label class="format-picker">Format <select id="recordFormat" class="input"><option>T20</option><option>ODI</option><option>Test</option></select></label>`}
 function updateRecordFormat(){recordFormat=document.getElementById("recordFormat").value;render()}
 function leader(field,title){const formatField=field==="fifty_plus"?"fifties":field,arr=DATA.players_format.filter(x=>careerFormat(x.format)===recordFormat).sort((a,b)=>Number(b[formatField])-Number(a[formatField])||a.name.localeCompare(b.name));app.innerHTML=head(title,"Format-specific leaderboard")+recordFormatPicker()+table(["Rank","Player","Team","Format",title.replace("Most ","")],arr.map((x,i)=>`<tr><td>${i+1}</td><td>${playerLink(x.name)}</td><td>${x.short_team}</td><td>${x.format}</td><td>${x[formatField]}</td></tr>`));document.getElementById("recordFormat").value=recordFormat;document.getElementById("recordFormat").onchange=updateRecordFormat}
-function careerRecords(){app.innerHTML=head("Career Records","All formats combined · includes 100s, 50+ scores, averages and career totals")+`<input id="careerSearch" class="input search" placeholder="Search player or team">`+table(["Rank","Player","Team","Test Runs","ODI Runs","T20 Runs","Career Runs","Avg","100s","50+","4s","6s","Wkts"],DATA.career_records.map((x,i)=>`<tr><td>${i+1}</td><td>${playerLink(x.name)}</td><td>${x.team}</td><td>${fmt(x.test_runs)}</td><td>${fmt(x.odi_runs)}</td><td>${fmt(x.t20_runs)}</td><td><b>${fmt(x.career_runs)}</b></td><td>${x.average}</td><td>${x.hundreds}</td><td>${x.fifty_plus}</td><td>${x.fours}</td><td>${x.sixes}</td><td>${x.wickets}</td></tr>`));document.getElementById("careerSearch").oninput=e=>{const q=e.target.value.toLowerCase();document.querySelectorAll(".table tbody tr").forEach(r=>r.style.display=r.innerText.toLowerCase().includes(q)?"":"none")}}
+function careerRecords(){app.innerHTML=head("Career Records","All formats combined · includes 100s, 50+ scores, averages and career totals")+`<input id="careerSearch" class="input search" placeholder="Search player or team">`+table(["Rank","Player","Team","Test Runs","ODI Runs","T20 Runs","Career Runs","Avg","100s","50+","4s","6s","Wkts"],mergedCareerRecords().map((x,i)=>`<tr><td>${i+1}</td><td>${playerLink(x.name)}</td><td>${x.team}</td><td>${fmt(x.test_runs)}</td><td>${fmt(x.odi_runs)}</td><td>${fmt(x.t20_runs)}</td><td><b>${fmt(x.career_runs)}</b></td><td>${x.average}</td><td>${x.hundreds}</td><td>${x.fifty_plus}</td><td>${x.fours}</td><td>${x.sixes}</td><td>${x.wickets}</td></tr>`));document.getElementById("careerSearch").oninput=e=>{const q=e.target.value.toLowerCase();document.querySelectorAll(".table tbody tr").forEach(r=>r.style.display=r.innerText.toLowerCase().includes(q)?"":"none")}}
 function catchesPage(){app.innerHTML=head("Most Catches","Fielding leaderboard");app.innerHTML+=table(["Rank","Player","Team","Catches","Stumpings","Run-outs"],DATA.catches.map(x=>`<tr><td>${x.catch_rank}</td><td>${playerLink(x.player)}</td><td>${x.short_team}</td><td>${x.total_catches}</td><td>${x.total_stumpings}</td><td>${x.total_runouts}</td></tr>`))}
 function teamRecords(){app.innerHTML=head("Team Records","Tournament results by team");app.innerHTML+=table(["Team","Matches","Wins","Losses","NR","Win %"],DATA.teams.map(x=>`<tr><td>${x.short_team}</td><td>${x.matches}</td><td>${x.wins}</td><td>${x.losses}</td><td>${x.no_results}</td><td>${x.win_percentage}%</td></tr>`))}
 function records(){app.innerHTML=head("Records","Choose an individual or team record category")+`<div class="grid">${[["Career Records","careerRecords"],["Most Centuries","centuryRecords"],["Most 50+ Scores","fiftyRecords"],["Most Sixes","sixRecords"],["Most Fours","fourRecords"],["Most Wickets","wicketRecords"],["Most Catches","catchRecords"],["Team Records","teamRecords"]].map(x=>`<div class="card"><h3>${x[0]}</h3><button class="btn" onclick="navigate('${x[1]}')">Open</button></div>`).join("")}</div>`}
@@ -287,19 +335,283 @@ function headToHead(){const ts=Object.keys(DATA.squads||{});app.innerHTML=head("
 function h2h(t){const rows=DATA.opponent_records.filter(x=>x.short_team===t||x.team===t).slice(0,50);document.getElementById("h2h").innerHTML=rows.length?table(Object.keys(rows[0]).slice(0,9),rows.map(x=>`<tr>${Object.values(x).slice(0,9).map(v=>`<td>${esc(v)}</td>`).join("")}</tr>`)):"No records found."}
 function stats(){app.innerHTML=head("Stats Explorer","Use the menu to move between format rankings, career records and opponent records")+`<div class="grid"><div class="card"><h3>Batting</h3><p>Runs · average · SR · 100s · 50+ · 4s · 6s</p><button class="btn" onclick="navigate('batRankings')">Open</button></div><div class="card"><h3>Bowling</h3><p>Overs · economy · wickets · bowling rating</p><button class="btn" onclick="navigate('bowlRankings')">Open</button></div><div class="card"><h3>Fielding</h3><p>Catches · stumpings · run-outs</p><button class="btn" onclick="navigate('catchRecords')">Open</button></div><div class="card"><h3>Player Career</h3><p>Separate Test, ODI and T20 records.</p><button class="btn" onclick="navigate('careerRecords')">Open</button></div></div>`}
 
+
+/* ============================================================
+   MATCH PERFORMANCE -> CAREER RECORDS
+   Completed uploaded matches are merged into browser-local
+   career statistics by format. A match is counted only once.
+   ============================================================ */
+
+function careerStore(){
+  try { return JSON.parse(localStorage.getItem("nict_career_updates") || "{}"); }
+  catch(e){ return {}; }
+}
+
+function saveCareerStore(store){
+  localStorage.setItem("nict_career_updates", JSON.stringify(store));
+}
+
+function playerCareerKey(name){
+  return String(name || "").trim().toLowerCase();
+}
+
+function findBaseCareer(name){
+  const key=playerCareerKey(name);
+  return (DATA.career_records || []).find(p=>playerCareerKey(p.name)===key) || null;
+}
+
+function ensureCareerPlayer(store, name, team, format){
+  const key=playerCareerKey(name);
+  if(!store[key]){
+    const base=findBaseCareer(name);
+    store[key]={
+      name:name,
+      team:st(team),
+      role:base?.role || "Player",
+      batting_style:base?.batting_style || "",
+      bowling_style:base?.bowling_style || "",
+      matches:Number(base?.matches||0),
+      innings:Number(base?.innings||0),
+      not_outs:Number(base?.not_outs||0),
+      runs:Number(base?.runs||0),
+      average:Number(base?.average||0),
+      highest:Number(base?.highest||0),
+      hundreds:Number(base?.hundreds||0),
+      fifties:Number(base?.fifties||0),
+      fifty_plus:Number(base?.fifty_plus||0),
+      fours:Number(base?.fours||0),
+      sixes:Number(base?.sixes||0),
+      wickets:Number(base?.wickets||0),
+      catches:Number(base?.catches||0),
+      stumpings:Number(base?.stumpings||0),
+      runouts:Number(base?.runouts||0),
+      formats:{
+        Test:{matches:0,innings:0,not_outs:0,runs:0,highest:0,hundreds:0,fifties:0,fifty_plus:0,fours:0,sixes:0,wickets:0},
+        ODI:{matches:0,innings:0,not_outs:0,runs:0,highest:0,hundreds:0,fifties:0,fifty_plus:0,fours:0,sixes:0,wickets:0},
+        T20:{matches:0,innings:0,not_outs:0,runs:0,highest:0,hundreds:0,fifties:0,fifty_plus:0,fours:0,sixes:0,wickets:0}
+      },
+      processed_matches:[]
+    };
+  }
+  if(!store[key].formats[format]){
+    store[key].formats[format]={matches:0,innings:0,not_outs:0,runs:0,highest:0,hundreds:0,fifties:0,fifty_plus:0,fours:0,sixes:0,wickets:0};
+  }
+  return store[key];
+}
+
+function deliveryDismisses(d){
+  return Number(d.wicket||0)>0 || !!d.dismissed_player || !!d.wicket_type;
+}
+
+function extractMatchPerformance(match){
+  const format=String(match.format||"T20").toUpperCase();
+  const deliveries=Array.isArray(match.deliveries)
+    ? match.deliveries
+    : (match.innings||[]).flatMap(x=>x.deliveries||[]);
+
+  const bat={};
+  const bowl={};
+  const played=new Set();
+
+  for(const d of deliveries){
+    const batsman=String(d.batsman||d.striker||"").trim();
+    const bowler=String(d.bowler||"").trim();
+    if(batsman){
+      played.add(batsman);
+      if(!bat[batsman]) bat[batsman]={
+        name:batsman,runs:0,balls:0,fours:0,sixes:0,out:false,innings:new Set()
+      };
+      bat[batsman].runs += Number(d.runs||0);
+      if(Number(d.runs||0)===4) bat[batsman].fours++;
+      if(Number(d.runs||0)===6) bat[batsman].sixes++;
+      if(d.legal!==false && !["wide","no-ball","noball"].includes(String(d.extra_type||"").toLowerCase())){
+        bat[batsman].balls++;
+      }
+      bat[batsman].innings.add(Number(d.innings||1));
+      if(deliveryDismisses(d) &&
+         (!d.dismissed_player || String(d.dismissed_player)===batsman) ){
+        bat[batsman].out=true;
+      }
+    }
+
+    if(bowler){
+      if(!bowl[bowler]) bowl[bowler]={name:bowler,wickets:0};
+      bowl[bowler].wickets += Number(d.wicket||0);
+    }
+  }
+
+  // A player who appears in a Playing XI but did not bat still participated.
+  const xi=match.playing_xi||{};
+  Object.values(xi).flat().forEach(n=>{
+    if(n)played.add(String(n));
+  });
+
+  return {format,bat,bowl,played};
+}
+
+function applyCompletedMatchToCareer(match){
+  if(!match || match.status!=="completed") return false;
+
+  const format=String(match.format||"T20").toUpperCase();
+  if(!["TEST","ODI","T20"].includes(format)) return false;
+
+  const matchId=String(match.match_id||match.file_name||`${match.team_a}_vs_${match.team_b}_${match.date||""}`);
+  const store=careerStore();
+
+  // Don't add the same completed match twice.
+  for(const key of Object.keys(store)){
+    if((store[key].processed_matches||[]).includes(matchId)) return false;
+  }
+
+  const perf=extractMatchPerformance(match);
+  const teams={};
+  for(const [team,names] of Object.entries(match.playing_xi||{})){
+    (names||[]).forEach(n=>teams[n]=st(team));
+  }
+
+  // Only count players who actually participated in the match.
+  for(const name of perf.played){
+    const team=teams[name] || st(match.team_a||"");
+    const p=ensureCareerPlayer(store,name,team,format);
+    const f=p.formats[format];
+
+    // Match is one appearance. Batting innings only if the player faced a ball.
+    const b=perf.bat[name];
+    const bw=perf.bowl[name];
+
+    f.matches++;
+    p.matches++;
+
+    if(b){
+      f.innings++;
+      p.innings++;
+      if(!b.out){
+        f.not_outs++;
+        p.not_outs++;
+      }
+
+      f.runs+=b.runs;
+      p.runs+=b.runs;
+
+      f.highest=Math.max(f.highest,b.runs);
+      p.highest=Math.max(p.highest,b.runs);
+
+      if(b.runs>=100){
+        f.hundreds++;
+        p.hundreds++;
+      }
+      if(b.runs>=50){
+        f.fifty_plus++;
+        p.fifty_plus++;
+        if(b.runs<100){
+          f.fifties++;
+          p.fifties++;
+        }
+      }
+
+      f.fours+=b.fours;
+      p.fours+=b.fours;
+      f.sixes+=b.sixes;
+      p.sixes+=b.sixes;
+    }
+
+    if(bw){
+      f.wickets+=bw.wickets;
+      p.wickets+=bw.wickets;
+    }
+
+    f.matches=f.matches;
+    p.processed_matches=p.processed_matches||[];
+    p.processed_matches.push(matchId);
+  }
+
+  // Recalculate averages from accumulated career totals.
+  for(const key of Object.keys(store)){
+    const p=store[key];
+    const totalDismissals=Math.max(0,p.innings-p.not_outs);
+    p.average=totalDismissals ? Number((p.runs/totalDismissals).toFixed(2)) : 0;
+
+    for(const fmt of ["Test","ODI","T20"]){
+      const f=p.formats[fmt];
+      const dismissals=Math.max(0,f.innings-f.not_outs);
+      f.average=dismissals ? Number((f.runs/dismissals).toFixed(2)) : 0;
+    }
+  }
+
+  saveCareerStore(store);
+  return true;
+}
+
+function mergedCareerRecords(){
+  const base=(DATA.career_records||[]).map(x=>JSON.parse(JSON.stringify(x)));
+  const store=careerStore();
+
+  for(const key of Object.keys(store)){
+    const u=store[key];
+    const idx=base.findIndex(p=>playerCareerKey(p.name)===key);
+
+    if(idx>=0){
+      const p=base[idx];
+      Object.assign(p,{
+        matches:u.matches,innings:u.innings,not_outs:u.not_outs,runs:u.runs,
+        average:u.average,highest:u.highest,hundreds:u.hundreds,fifties:u.fifties,
+        fifty_plus:u.fifty_plus,fours:u.fours,sixes:u.sixes,wickets:u.wickets
+      });
+      p.test_runs=u.formats.Test.runs;
+      p.odi_runs=u.formats.ODI.runs;
+      p.t20_runs=u.formats.T20.runs;
+      p.career_runs=u.formats.Test.runs+u.formats.ODI.runs+u.formats.T20.runs;
+      p.format_updates=u.formats;
+    }else{
+      u.test_runs=u.formats.Test.runs;
+      u.odi_runs=u.formats.ODI.runs;
+      u.t20_runs=u.formats.T20.runs;
+      u.career_runs=u.test_runs+u.odi_runs+u.t20_runs;
+      base.push(u);
+    }
+  }
+  return base;
+}
+
+function mergeCareerIntoUI(){
+  DATA.career_records=mergedCareerRecords();
+}
+
+function finalizeActiveMatch(raw){
+  if(!raw || raw.status==="completed") {
+    // Even if the feed already says completed, process it once.
+    if(raw) applyCompletedMatchToCareer(raw);
+    mergeCareerIntoUI();
+    return;
+  }
+  raw.status="completed";
+  applyCompletedMatchToCareer(raw);
+  mergeCareerIntoUI();
+}
+
 function admin(){
  if(sessionStorage.getItem("nict_admin")==="true")return adminPanel();
  app.innerHTML=`<div class="admin-lock card"><h1>🔒 Admin</h1><p class="muted">Enter the tournament admin password.</p><input id="adminPass" class="input" type="password" placeholder="Password"><button class="btn" onclick="unlock()">Unlock Admin</button><p id="adminMsg" class="muted"></p></div>`;
 }
-function unlock(){if(document.getElementById("adminPass").value==="@@12309"){sessionStorage.setItem("nict_admin","true");adminPanel()}else document.getElementById("adminMsg").textContent="Incorrect password."}
+function unlock(){if(document.getElementById("adminPass").value==="12309856"){sessionStorage.setItem("nict_admin","true");adminPanel()}else document.getElementById("adminMsg").textContent="Incorrect password."}
 function adminPanel(){
  app.innerHTML=head("Admin","Upload a complete ball-by-ball JSON and start it in the frontend viewer")+
  `<div class="notice">Upload format: JSON with <b>deliveries</b>. Team names are normalized automatically. A filename such as <b>GCET_vs_GLB.json</b> is also understood. Uploaded matches are stored in this browser.</div>
  <div class="section upload-box"><h2>Upload Match JSON</h2><input class="input file" id="jsonFile" type="file" accept=".json,application/json"><button class="btn" onclick="uploadJSON()">Upload Match</button><p id="uploadMsg" class="muted"></p></div>
  <div class="section"><h2>Available Matches</h2><div id="adminMatches"></div></div>
- <div class="section"><button class="btn secondary" onclick="sessionStorage.removeItem('nict_admin');admin()">Lock Admin</button></div>`;
+ <div class="section"><button class="btn secondary" onclick="rebuildCareerFromCompletedMatches()">Update Career From Completed Matches</button> <button class="btn secondary" onclick="sessionStorage.removeItem('nict_admin');admin()">Lock Admin</button></div>`;
  renderAdminMatches();
 }
+
+function rebuildCareerFromCompletedMatches(){
+  const all=DATA.live_matches||[];
+  let added=0;
+  all.forEach(m=>{ if(applyCompletedMatchToCareer(m)) added++; });
+  mergeCareerIntoUI();
+  alert(`${added} completed match${added===1?"":"es"} added to career records.`);
+  renderAdminMatches();
+}
+
 function renderAdminMatches(){
  const box=document.getElementById("adminMatches");if(!box)return;
  const local=JSON.parse(localStorage.getItem("nict_uploaded_matches")||"[]");

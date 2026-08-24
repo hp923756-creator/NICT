@@ -1,0 +1,802 @@
+[
+  {
+    "catch_rank": 1,
+    "player": "Abeer Malhotra",
+    "short_team": "KCC",
+    "total_catches": 54,
+    "total_stumpings": 0,
+    "total_runouts": 4
+  },
+  {
+    "catch_rank": 2,
+    "player": "Ishaan Bhardwaj",
+    "short_team": "GLB",
+    "total_catches": 54,
+    "total_stumpings": 0,
+    "total_runouts": 7
+  },
+  {
+    "catch_rank": 3,
+    "player": "Pranav Goyal",
+    "short_team": "GLB",
+    "total_catches": 54,
+    "total_stumpings": 0,
+    "total_runouts": 6
+  },
+  {
+    "catch_rank": 4,
+    "player": "Shreyansh Chaurasia",
+    "short_team": "JSS",
+    "total_catches": 54,
+    "total_stumpings": 0,
+    "total_runouts": 5
+  },
+  {
+    "catch_rank": 5,
+    "player": "Vikrant Saini",
+    "short_team": "ABES",
+    "total_catches": 54,
+    "total_stumpings": 0,
+    "total_runouts": 5
+  },
+  {
+    "catch_rank": 6,
+    "player": "Yash Tiwari",
+    "short_team": "GCET",
+    "total_catches": 54,
+    "total_stumpings": 0,
+    "total_runouts": 3
+  },
+  {
+    "catch_rank": 7,
+    "player": "Yuvraj Meena",
+    "short_team": "ABES",
+    "total_catches": 54,
+    "total_stumpings": 0,
+    "total_runouts": 8
+  },
+  {
+    "catch_rank": 8,
+    "player": "Lakshay Bisht",
+    "short_team": "JSS",
+    "total_catches": 53,
+    "total_stumpings": 0,
+    "total_runouts": 7
+  },
+  {
+    "catch_rank": 9,
+    "player": "Manas Kapoor",
+    "short_team": "JSS",
+    "total_catches": 53,
+    "total_stumpings": 0,
+    "total_runouts": 10
+  },
+  {
+    "catch_rank": 10,
+    "player": "Tanishq Agarwal",
+    "short_team": "JSS",
+    "total_catches": 53,
+    "total_stumpings": 0,
+    "total_runouts": 11
+  },
+  {
+    "catch_rank": 11,
+    "player": "Adittya Bansal",
+    "short_team": "GLB",
+    "total_catches": 52,
+    "total_stumpings": 0,
+    "total_runouts": 6
+  },
+  {
+    "catch_rank": 12,
+    "player": "Devansh Singh",
+    "short_team": "ABES",
+    "total_catches": 52,
+    "total_stumpings": 0,
+    "total_runouts": 8
+  },
+  {
+    "catch_rank": 13,
+    "player": "Vedant Saini",
+    "short_team": "KCC",
+    "total_catches": 52,
+    "total_stumpings": 0,
+    "total_runouts": 5
+  },
+  {
+    "catch_rank": 14,
+    "player": "Divit Arora",
+    "short_team": "GLB",
+    "total_catches": 51,
+    "total_stumpings": 0,
+    "total_runouts": 10
+  },
+  {
+    "catch_rank": 15,
+    "player": "Gaurav Rajput",
+    "short_team": "ABES",
+    "total_catches": 51,
+    "total_stumpings": 0,
+    "total_runouts": 7
+  },
+  {
+    "catch_rank": 16,
+    "player": "Aman Bhardwaj",
+    "short_team": "ABES",
+    "total_catches": 50,
+    "total_stumpings": 0,
+    "total_runouts": 3
+  },
+  {
+    "catch_rank": 17,
+    "player": "Harshit Tomar",
+    "short_team": "ABES",
+    "total_catches": 50,
+    "total_stumpings": 0,
+    "total_runouts": 7
+  },
+  {
+    "catch_rank": 18,
+    "player": "Kunal Bhadana",
+    "short_team": "KCC",
+    "total_catches": 50,
+    "total_stumpings": 0,
+    "total_runouts": 4
+  },
+  {
+    "catch_rank": 19,
+    "player": "Lakshya Goyal",
+    "short_team": "KCC",
+    "total_catches": 50,
+    "total_stumpings": 0,
+    "total_runouts": 8
+  },
+  {
+    "catch_rank": 20,
+    "player": "Vatsal Nagar",
+    "short_team": "GLB",
+    "total_catches": 50,
+    "total_stumpings": 14,
+    "total_runouts": 10
+  },
+  {
+    "catch_rank": 21,
+    "player": "Yashvardhan Rana",
+    "short_team": "JSS",
+    "total_catches": 50,
+    "total_stumpings": 0,
+    "total_runouts": 5
+  },
+  {
+    "catch_rank": 22,
+    "player": "Aarush Bedi",
+    "short_team": "GLB",
+    "total_catches": 49,
+    "total_stumpings": 0,
+    "total_runouts": 3
+  },
+  {
+    "catch_rank": 23,
+    "player": "Devansh Kapoor",
+    "short_team": "KCC",
+    "total_catches": 49,
+    "total_stumpings": 0,
+    "total_runouts": 5
+  },
+  {
+    "catch_rank": 24,
+    "player": "Devendra Pal",
+    "short_team": "JSS",
+    "total_catches": 49,
+    "total_stumpings": 0,
+    "total_runouts": 3
+  },
+  {
+    "catch_rank": 25,
+    "player": "Ritvik Bansal",
+    "short_team": "ABES",
+    "total_catches": 49,
+    "total_stumpings": 0,
+    "total_runouts": 7
+  },
+  {
+    "catch_rank": 26,
+    "player": "Saurabh Kumar",
+    "short_team": "GCET",
+    "total_catches": 49,
+    "total_stumpings": 0,
+    "total_runouts": 3
+  },
+  {
+    "catch_rank": 27,
+    "player": "Parth Bansal",
+    "short_team": "KCC",
+    "total_catches": 48,
+    "total_stumpings": 0,
+    "total_runouts": 4
+  },
+  {
+    "catch_rank": 28,
+    "player": "Rishabh Jaiswal",
+    "short_team": "ABES",
+    "total_catches": 48,
+    "total_stumpings": 0,
+    "total_runouts": 4
+  },
+  {
+    "catch_rank": 29,
+    "player": "Tushar Saini",
+    "short_team": "GLB",
+    "total_catches": 48,
+    "total_stumpings": 13,
+    "total_runouts": 7
+  },
+  {
+    "catch_rank": 30,
+    "player": "Aaryan Kapoor",
+    "short_team": "KCC",
+    "total_catches": 47,
+    "total_stumpings": 16,
+    "total_runouts": 9
+  },
+  {
+    "catch_rank": 31,
+    "player": "Devansh Sharma",
+    "short_team": "GCET",
+    "total_catches": 47,
+    "total_stumpings": 0,
+    "total_runouts": 6
+  },
+  {
+    "catch_rank": 32,
+    "player": "Manish Rawat",
+    "short_team": "GCET",
+    "total_catches": 47,
+    "total_stumpings": 0,
+    "total_runouts": 8
+  },
+  {
+    "catch_rank": 33,
+    "player": "Samar Singh",
+    "short_team": "KCC",
+    "total_catches": 47,
+    "total_stumpings": 0,
+    "total_runouts": 3
+  },
+  {
+    "catch_rank": 34,
+    "player": "Vivek Yadav",
+    "short_team": "GCET",
+    "total_catches": 47,
+    "total_stumpings": 0,
+    "total_runouts": 6
+  },
+  {
+    "catch_rank": 35,
+    "player": "Kartik Chauhan",
+    "short_team": "ABES",
+    "total_catches": 46,
+    "total_stumpings": 9,
+    "total_runouts": 4
+  },
+  {
+    "catch_rank": 36,
+    "player": "Nakul Chaudhary",
+    "short_team": "GLB",
+    "total_catches": 46,
+    "total_stumpings": 0,
+    "total_runouts": 6
+  },
+  {
+    "catch_rank": 37,
+    "player": "Shaurya Malik",
+    "short_team": "GLB",
+    "total_catches": 46,
+    "total_stumpings": 0,
+    "total_runouts": 5
+  },
+  {
+    "catch_rank": 38,
+    "player": "Lavish Chaudhary",
+    "short_team": "ABES",
+    "total_catches": 45,
+    "total_stumpings": 0,
+    "total_runouts": 4
+  },
+  {
+    "catch_rank": 39,
+    "player": "Rishit Verma",
+    "short_team": "KCC",
+    "total_catches": 45,
+    "total_stumpings": 0,
+    "total_runouts": 7
+  },
+  {
+    "catch_rank": 40,
+    "player": "Rudransh Tyagi",
+    "short_team": "JSS",
+    "total_catches": 45,
+    "total_stumpings": 0,
+    "total_runouts": 5
+  },
+  {
+    "catch_rank": 41,
+    "player": "Nikhil Saini",
+    "short_team": "GCET",
+    "total_catches": 44,
+    "total_stumpings": 0,
+    "total_runouts": 9
+  },
+  {
+    "catch_rank": 42,
+    "player": "Nishant Dagar",
+    "short_team": "JSS",
+    "total_catches": 44,
+    "total_stumpings": 0,
+    "total_runouts": 9
+  },
+  {
+    "catch_rank": 43,
+    "player": "Rajat Tyagi",
+    "short_team": "GLB",
+    "total_catches": 44,
+    "total_stumpings": 0,
+    "total_runouts": 6
+  },
+  {
+    "catch_rank": 44,
+    "player": "Ankit Bhadouria",
+    "short_team": "JSS",
+    "total_catches": 42,
+    "total_stumpings": 0,
+    "total_runouts": 10
+  },
+  {
+    "catch_rank": 45,
+    "player": "Anmol Chauhan",
+    "short_team": "KCC",
+    "total_catches": 42,
+    "total_stumpings": 0,
+    "total_runouts": 8
+  },
+  {
+    "catch_rank": 46,
+    "player": "Dhruv Kashyap",
+    "short_team": "JSS",
+    "total_catches": 42,
+    "total_stumpings": 16,
+    "total_runouts": 8
+  },
+  {
+    "catch_rank": 47,
+    "player": "Mohini Sharma",
+    "short_team": "GLB",
+    "total_catches": 42,
+    "total_stumpings": 0,
+    "total_runouts": 8
+  },
+  {
+    "catch_rank": 48,
+    "player": "Mudit Chauhan",
+    "short_team": "GLB",
+    "total_catches": 42,
+    "total_stumpings": 0,
+    "total_runouts": 6
+  },
+  {
+    "catch_rank": 49,
+    "player": "Nakul Bhatia",
+    "short_team": "KCC",
+    "total_catches": 42,
+    "total_stumpings": 0,
+    "total_runouts": 8
+  },
+  {
+    "catch_rank": 50,
+    "player": "Raghav Tripathi",
+    "short_team": "JSS",
+    "total_catches": 42,
+    "total_stumpings": 9,
+    "total_runouts": 3
+  },
+  {
+    "catch_rank": 51,
+    "player": "Anshul Tiwari",
+    "short_team": "ABES",
+    "total_catches": 41,
+    "total_stumpings": 0,
+    "total_runouts": 6
+  },
+  {
+    "catch_rank": 52,
+    "player": "Arjun Patel",
+    "short_team": "GCET",
+    "total_catches": 41,
+    "total_stumpings": 0,
+    "total_runouts": 6
+  },
+  {
+    "catch_rank": 53,
+    "player": "Arnav Chauhan",
+    "short_team": "JSS",
+    "total_catches": 41,
+    "total_stumpings": 0,
+    "total_runouts": 11
+  },
+  {
+    "catch_rank": 54,
+    "player": "Sarthak Beniwal",
+    "short_team": "JSS",
+    "total_catches": 41,
+    "total_stumpings": 0,
+    "total_runouts": 7
+  },
+  {
+    "catch_rank": 55,
+    "player": "Shivam Chauhan",
+    "short_team": "GCET",
+    "total_catches": 41,
+    "total_stumpings": 0,
+    "total_runouts": 6
+  },
+  {
+    "catch_rank": 56,
+    "player": "Abhishek Choudhary",
+    "short_team": "KCC",
+    "total_catches": 40,
+    "total_stumpings": 0,
+    "total_runouts": 10
+  },
+  {
+    "catch_rank": 57,
+    "player": "Ankit Kumar",
+    "short_team": "GCET",
+    "total_catches": 40,
+    "total_stumpings": 0,
+    "total_runouts": 6
+  },
+  {
+    "catch_rank": 58,
+    "player": "Parth Sharma",
+    "short_team": "GLB",
+    "total_catches": 40,
+    "total_stumpings": 0,
+    "total_runouts": 9
+  },
+  {
+    "catch_rank": 59,
+    "player": "Ayush Dubey",
+    "short_team": "ABES",
+    "total_catches": 39,
+    "total_stumpings": 0,
+    "total_runouts": 4
+  },
+  {
+    "catch_rank": 60,
+    "player": "Kunal Yadav",
+    "short_team": "GCET",
+    "total_catches": 39,
+    "total_stumpings": 0,
+    "total_runouts": 7
+  },
+  {
+    "catch_rank": 61,
+    "player": "Mohit Kumar",
+    "short_team": "GCET",
+    "total_catches": 39,
+    "total_stumpings": 0,
+    "total_runouts": 7
+  },
+  {
+    "catch_rank": 62,
+    "player": "Himanshu Dagar",
+    "short_team": "KCC",
+    "total_catches": 38,
+    "total_stumpings": 0,
+    "total_runouts": 7
+  },
+  {
+    "catch_rank": 63,
+    "player": "Shivank Tomar",
+    "short_team": "JSS",
+    "total_catches": 38,
+    "total_stumpings": 0,
+    "total_runouts": 9
+  },
+  {
+    "catch_rank": 64,
+    "player": "Abhinav Pal",
+    "short_team": "ABES",
+    "total_catches": 37,
+    "total_stumpings": 0,
+    "total_runouts": 9
+  },
+  {
+    "catch_rank": 65,
+    "player": "Aryan Tanwar",
+    "short_team": "KCC",
+    "total_catches": 37,
+    "total_stumpings": 0,
+    "total_runouts": 4
+  },
+  {
+    "catch_rank": 66,
+    "player": "Ashish Kumar",
+    "short_team": "JSS",
+    "total_catches": 37,
+    "total_stumpings": 0,
+    "total_runouts": 8
+  },
+  {
+    "catch_rank": 67,
+    "player": "Siddharth Srivastava",
+    "short_team": "ABES",
+    "total_catches": 34,
+    "total_stumpings": 15,
+    "total_runouts": 6
+  },
+  {
+    "catch_rank": 68,
+    "player": "Abhishek Raj",
+    "short_team": "GCET",
+    "total_catches": 33,
+    "total_stumpings": 13,
+    "total_runouts": 4
+  },
+  {
+    "catch_rank": 69,
+    "player": "Manav Batra",
+    "short_team": "ABES",
+    "total_catches": 33,
+    "total_stumpings": 0,
+    "total_runouts": 8
+  },
+  {
+    "catch_rank": 70,
+    "player": "Pratham Rawat",
+    "short_team": "JSS",
+    "total_catches": 33,
+    "total_stumpings": 0,
+    "total_runouts": 6
+  },
+  {
+    "catch_rank": 71,
+    "player": "Ronav Kapoor",
+    "short_team": "GLB",
+    "total_catches": 33,
+    "total_stumpings": 0,
+    "total_runouts": 8
+  },
+  {
+    "catch_rank": 72,
+    "player": "Vihaan Dagar",
+    "short_team": "GLB",
+    "total_catches": 33,
+    "total_stumpings": 0,
+    "total_runouts": 12
+  },
+  {
+    "catch_rank": 73,
+    "player": "Anubhav Yadav",
+    "short_team": "JSS",
+    "total_catches": 32,
+    "total_stumpings": 0,
+    "total_runouts": 4
+  },
+  {
+    "catch_rank": 74,
+    "player": "Aarav Sharma",
+    "short_team": "GCET",
+    "total_catches": 31,
+    "total_stumpings": 0,
+    "total_runouts": 4
+  },
+  {
+    "catch_rank": 75,
+    "player": "Adarsh Yadav",
+    "short_team": "GLB",
+    "total_catches": 31,
+    "total_stumpings": 0,
+    "total_runouts": 8
+  },
+  {
+    "catch_rank": 76,
+    "player": "Aviral Saxena",
+    "short_team": "JSS",
+    "total_catches": 31,
+    "total_stumpings": 0,
+    "total_runouts": 8
+  },
+  {
+    "catch_rank": 77,
+    "player": "Deepanshu Gupta",
+    "short_team": "GLB",
+    "total_catches": 31,
+    "total_stumpings": 0,
+    "total_runouts": 5
+  },
+  {
+    "catch_rank": 78,
+    "player": "Keshav Rawat",
+    "short_team": "GLB",
+    "total_catches": 30,
+    "total_stumpings": 0,
+    "total_runouts": 9
+  },
+  {
+    "catch_rank": 79,
+    "player": "Shaurya Dagar",
+    "short_team": "KCC",
+    "total_catches": 30,
+    "total_stumpings": 0,
+    "total_runouts": 6
+  },
+  {
+    "catch_rank": 80,
+    "player": "Ratan Sawrankar",
+    "short_team": "ABES",
+    "total_catches": 29,
+    "total_stumpings": 0,
+    "total_runouts": 6
+  },
+  {
+    "catch_rank": 81,
+    "player": "Aayush Ahuja",
+    "short_team": "KCC",
+    "total_catches": 28,
+    "total_stumpings": 0,
+    "total_runouts": 4
+  },
+  {
+    "catch_rank": 82,
+    "player": "Kushagra Singh Thakur",
+    "short_team": "JSS",
+    "total_catches": 28,
+    "total_stumpings": 0,
+    "total_runouts": 8
+  },
+  {
+    "catch_rank": 83,
+    "player": "Naman Tyagi",
+    "short_team": "ABES",
+    "total_catches": 28,
+    "total_stumpings": 0,
+    "total_runouts": 8
+  },
+  {
+    "catch_rank": 84,
+    "player": "Samarjeet Singh",
+    "short_team": "ABES",
+    "total_catches": 28,
+    "total_stumpings": 0,
+    "total_runouts": 7
+  },
+  {
+    "catch_rank": 85,
+    "player": "Aditya Singh",
+    "short_team": "GCET",
+    "total_catches": 27,
+    "total_stumpings": 0,
+    "total_runouts": 7
+  },
+  {
+    "catch_rank": 86,
+    "player": "Ayush Gupta",
+    "short_team": "GCET",
+    "total_catches": 27,
+    "total_stumpings": 0,
+    "total_runouts": 2
+  },
+  {
+    "catch_rank": 87,
+    "player": "Sangam Singh",
+    "short_team": "ABES",
+    "total_catches": 27,
+    "total_stumpings": 0,
+    "total_runouts": 8
+  },
+  {
+    "catch_rank": 88,
+    "player": "Raghav Bansal",
+    "short_team": "KCC",
+    "total_catches": 25,
+    "total_stumpings": 0,
+    "total_runouts": 7
+  },
+  {
+    "catch_rank": 89,
+    "player": "Krish Tyagi",
+    "short_team": "KCC",
+    "total_catches": 24,
+    "total_stumpings": 0,
+    "total_runouts": 11
+  },
+  {
+    "catch_rank": 90,
+    "player": "Rudra Pratap",
+    "short_team": "KCC",
+    "total_catches": 24,
+    "total_stumpings": 10,
+    "total_runouts": 8
+  },
+  {
+    "catch_rank": 91,
+    "player": "Yatin Sharma",
+    "short_team": "KCC",
+    "total_catches": 24,
+    "total_stumpings": 0,
+    "total_runouts": 7
+  },
+  {
+    "catch_rank": 92,
+    "player": "Rohan Verma",
+    "short_team": "GCET",
+    "total_catches": 23,
+    "total_stumpings": 0,
+    "total_runouts": 6
+  },
+  {
+    "catch_rank": 93,
+    "player": "Deepak Joshi",
+    "short_team": "GCET",
+    "total_catches": 21,
+    "total_stumpings": 6,
+    "total_runouts": 7
+  },
+  {
+    "catch_rank": 94,
+    "player": "Suyash Tomar",
+    "short_team": "GLB",
+    "total_catches": 21,
+    "total_stumpings": 0,
+    "total_runouts": 8
+  },
+  {
+    "catch_rank": 95,
+    "player": "Abhay Tanwar",
+    "short_team": "GLB",
+    "total_catches": 20,
+    "total_stumpings": 0,
+    "total_runouts": 9
+  },
+  {
+    "catch_rank": 96,
+    "player": "Kaushik Mahur",
+    "short_team": "ABES",
+    "total_catches": 15,
+    "total_stumpings": 0,
+    "total_runouts": 6
+  },
+  {
+    "catch_rank": 97,
+    "player": "Kartikeya Singh",
+    "short_team": "JSS",
+    "total_catches": 11,
+    "total_stumpings": 0,
+    "total_runouts": 8
+  },
+  {
+    "catch_rank": 98,
+    "player": "Rahul Mishra",
+    "short_team": "GCET",
+    "total_catches": 11,
+    "total_stumpings": 0,
+    "total_runouts": 3
+  },
+  {
+    "catch_rank": 99,
+    "player": "Priyanshu Gupta",
+    "short_team": "GCET",
+    "total_catches": 10,
+    "total_stumpings": 0,
+    "total_runouts": 8
+  },
+  {
+    "catch_rank": 100,
+    "player": "Harsh Pandey",
+    "short_team": "GCET",
+    "total_catches": 3,
+    "total_stumpings": 0,
+    "total_runouts": 2
+  }
+]
