@@ -144,8 +144,7 @@ function renderLive(raw){
  <div class="section grid"><div class="card"><h3>Partnership</h3><div class="big">${state.partnership.runs}</div><span class="muted">${state.partnership.balls} balls</span></div><div class="card"><h3>Bowler</h3><div>${esc(state.bowler.name||"—")}</div><span class="muted">${state.bowler.overs} · ${state.bowler.runs}-${state.bowler.wickets}</span></div><div class="card"><h3>Venue</h3><div>${esc(m.venue||"—")}</div></div><div class="card"><h3>Umpires</h3><div>${esc([m.umpire_1,m.umpire_2].filter(Boolean).join(" · ")||"—")}</div></div></div>
  <div class="section"><h2>Last balls</h2><div class="lastballs">${last||"<span class='muted'>Waiting for first delivery...</span>"}</div></div>
  <div class="section"><h2>Playing XI</h2>${playingXI(m,a,b)}</div>
- <div class="section"><h2>Batting Scorecard</h2>${battingCard(state)}</div>
- <div class="section"><h2>Bowling Card</h2>${bowlingCard(state)}</div>
+ ${allInningsCards(shown,m)}
  <div class="section"><h2>Commentary</h2>${comments||"<div class='empty'>No commentary yet.</div>"}</div>`;
 }
 function deliveryIndex(ds,elapsed){
@@ -182,9 +181,9 @@ function getReplayState(ds,elapsed,m){
 function legalCountBefore(ds,i){return ds.slice(0,i).filter(legalBall).length}
 function legalBall(d){return !["wide","no-ball","noball"].includes(String(d.extra_type||"").toLowerCase())}
 
-function calcMatch(ds,m){
+function calcMatch(ds,m,forcedInnings=null){
  const inningsNos=[...new Set(ds.map(d=>Number(d.innings||1)))].sort((a,b)=>a-b);
- const inn=inningsNos.length?inningsNos[inningsNos.length-1]:1;
+ const inn=forcedInnings|| (inningsNos.length?inningsNos[inningsNos.length-1]:1);
  const current=ds.filter(d=>Number(d.innings||1)===inn);
  const battingTeam=current[0]?.batsman_team||((inn%2===1)?st(m.team_a):st(m.team_b));
  const bowlingTeam=current[0]?.bowling_team||((battingTeam===st(m.team_a))?st(m.team_b):st(m.team_a));
@@ -250,6 +249,9 @@ function battingCard(state){
 function bowlingCard(state){
  const rows=Object.values(state.bowl).map(x=>`<tr><td>${esc(x.name)}</td><td>${Math.floor(x.legal/6)}.${x.legal%6}</td><td>—</td><td>${x.runs}</td><td>${x.wickets}</td><td>${x.legal?(x.runs/(x.legal/6)).toFixed(2):"0.00"}</td></tr>`);
  return table(["Bowler","O","M","R","W","Econ"],rows);
+}
+function allInningsCards(ds,m){
+ return Array.from({length:4},(_,index)=>{const innings=index+1, inningsData=ds.filter(d=>Number(d.innings||1)===innings), state=calcMatch(inningsData,m,innings), battingTeam=state.team, bowlingTeam=battingTeam===st(m.team_a)?st(m.team_b):st(m.team_a);return `<div class="section"><h2>Innings ${innings}: ${esc(battingTeam)} batting</h2><div class="muted innings-summary">${inningsData.length?`${state.runs}/${state.wickets} · ${state.overs} overs`:`Not started`}</div><h3>Batting Scorecard</h3>${inningsData.length?battingCard(state):`<div class="card empty">No deliveries recorded.</div>`}<h3>Bowling Card: ${esc(bowlingTeam)}</h3>${inningsData.length?bowlingCard(state):`<div class="card empty">No deliveries recorded.</div>`}</div>`}).join("");
 }
 function playingXI(m,a,b){
  const ix=m.playing_xi||{};
