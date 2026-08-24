@@ -1,5 +1,5 @@
 const DATA={}; let view="home", currentPlayer="", liveTimer=null, rankingFormat="T20", recordFormat="T20";
-const BALL_DELAY_SECONDS=30, OVER_BREAK_SECONDS=60, INNINGS_BREAK_SECONDS=900, TOSS_BREAK_SECONDS=900;
+const BALL_DELAY_SECONDS=60, OVER_BREAK_SECONDS=120, INNINGS_BREAK_SECONDS=900, TOSS_BREAK_SECONDS=900;
 const app=document.getElementById("app");
 const TEAM_MAP={
  "Galgotia College Cricket Club":"GCET","Galgotia College":"GCET","GCCC":"GCET","GCET":"GCET",
@@ -126,7 +126,7 @@ function updateCareerFromMatch(m){
 function renderLive(raw){
  const m=normalizedMatch(raw), ds=m.deliveries||[];
  const elapsed=Math.max(0,(Date.now()-replayStart)/1000);
- const replayState=getReplayState(ds,Date.now()-replayStart,m), shown=ds.slice(0,replayState.idx);
+ const replayState=getReplayState(ds,elapsed,m), shown=ds.slice(0,replayState.idx);
  const state=calcMatch(shown,m);
  if(m.file_name&&shown.length===ds.length&&ds.length){updateCareerFromMatch(m);}
  const currentInnings=state.innings;
@@ -167,6 +167,7 @@ function formatCountdown(seconds){
 function eventLabel(event){
  if(event.type==="toss")return `Toss result confirmed · First ball in ${formatCountdown(event.remaining)}`;
  if(event.type==="innings_break")return `Innings break · Second innings in ${formatCountdown(event.remaining)}`;
+ if(event.type==="over_break")return `Over break · Next ball in ${formatCountdown(event.remaining)}`;
  if(event.type==="tea")return `Tea break · Play resumes in ${formatCountdown(event.remaining)}`;
  if(event.type==="drinks")return `Drinks break · Play resumes in ${formatCountdown(event.remaining)}`;
  if(event.type==="rain")return "Rain suspension";
@@ -174,57 +175,75 @@ function eventLabel(event){
  return "Match in progress";
 }
 function getReplayState(ds,elapsed,m){
- let time=0;
- const events=[...(m.events||[])].sort((a,b)=>Number(a.afterBall)-Number(b.afterBall));
+  elapsed=Math.max(0,Number(elapsed)||0);
+  let time=0;
 
- // Toss result is shown first. The first delivery starts 15 minutes later.
- if(m.toss_winner){
-   if(elapsed<TOSS_BREAK_SECONDS){
-     return {idx:0,event:{type:"toss",remaining:Math.max(0,TOSS_BREAK_SECONDS-elapsed)}};
-   }
-   time=TOSS_BREAK_SECONDS;
- }
+  // 15-minute toss wait before the first delivery.
+  if(m.toss_winner){
+    if(elapsed<TOSS_BREAK_SECONDS){
+      return {
+        idx:0,
+        event:{
+          type:"toss",
+          remaining:TOSS_BREAK_SECONDS-elapsed
+        }
+      };
+    }
+    time=TOSS_BREAK_SECONDS;
+  }
 
- for(let i=0;i<=ds.length;i++){
-   // Manual events configured in Admin.
-   for(const event of events.filter(x=>Number(x.afterBall)===i)){
-     if(event.type==="draw")return {idx:i,event};
-     if(event.type==="rain"&&!event.resumed)return {idx:i,event};
-     const pause=event.type==="tea"?900:event.type==="drinks"?300:0;
-     if(pause){
-       if(elapsed<time+pause){
-         return {idx:i,event:{...event,remaining:Math.max(0,time+pause-elapsed)}};
-       }
-       time+=pause;
-     }
-   }
+  let previousInnings=null;
+  let legalInCurrentOver=0;
 
-   // Automatic 15-minute break when innings changes.
-   if(i>0 && i<ds.length &&
-      Number(ds[i].innings||1)!==Number(ds[i-1].innings||1)){
-     if(elapsed<time+INNINGS_BREAK_SECONDS){
-       return {
-         idx:i,
-         event:{
-           type:"innings_break",
-           remaining:Math.max(0,time+INNINGS_BREAK_SECONDS-elapsed)
-         }
-       };
-     }
-     time+=INNINGS_BREAK_SECONDS;
-   }
+  for(let i=0;i<ds.length;i++){
+    const d=ds[i];
+    const innings=Number(d.innings||1);
 
-   if(i===ds.length)return {idx:i,event:null};
+    // 15-minute break between innings.
+    if(previousInnings!==null && innings!==previousInnings){
+      if(elapsed<time+INNINGS_BREAK_SECONDS){
+        return {
+          idx:i,
+          event:{
+            type:"innings_break",
+            remaining:time+INNINGS_BREAK_SECONDS-elapsed
+          }
+        };
+      }
+      time+=INNINGS_BREAK_SECONDS;
+      legalInCurrentOver=0;
+    }
 
-   const previous=i?ds[i-1]:null;
-   const overBreak=previous&&legalBall(previous)&&legalCountBefore(ds,i)%6===0
-     ?OVER_BREAK_SECONDS:0;
-   const duration=BALL_DELAY_SECONDS+overBreak;
+    // 2-minute break after every completed over.
+    if(i>0 && legalInCurrentOver===0){
+      if(elapsed<time+OVER_BREAK_SECONDS){
+        return {
+          idx:i,
+          event:{
+            type:"over_break",
+            remaining:time+OVER_BREAK_SECONDS-elapsed
+          }
+        };
+      }
+      time+=OVER_BREAK_SECONDS;
+    }
 
-   if(elapsed<time+duration)return {idx:i,event:null};
-   time+=duration;
- }
- return {idx:ds.length,event:null};
+    // Exactly one delivery every BALL_DELAY_SECONDS.
+    if(elapsed<time+BALL_DELAY_SECONDS){
+      return {idx:i,event:null};
+    }
+
+    time+=BALL_DELAY_SECONDS;
+
+    if(legalBall(d)){
+      legalInCurrentOver++;
+      if(legalInCurrentOver===6) legalInCurrentOver=0;
+    }
+
+    previousInnings=innings;
+  }
+
+  return {idx:ds.length,event:null};
 }
 function legalCountBefore(ds,i){return ds.slice(0,i).filter(legalBall).length}
 function legalBall(d){return !["wide","no-ball","noball"].includes(String(d.extra_type||"").toLowerCase())}
