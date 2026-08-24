@@ -1,0 +1,47 @@
+[
+  {
+    "team": "ABES Cricket Club",
+    "matches": 30,
+    "wins": 22,
+    "losses": 7,
+    "no_results": 1,
+    "win_percentage": 75.9,
+    "short_team": "ABES"
+  },
+  {
+    "team": "JSS Greater Noida Cricket Club",
+    "matches": 30,
+    "wins": 20,
+    "losses": 9,
+    "no_results": 1,
+    "win_percentage": 69.0,
+    "short_team": "JSS"
+  },
+  {
+    "team": "Galgotia College Cricket Club",
+    "matches": 30,
+    "wins": 18,
+    "losses": 11,
+    "no_results": 1,
+    "win_percentage": 62.1,
+    "short_team": "GCET"
+  },
+  {
+    "team": "KCC Cricket Club",
+    "matches": 30,
+    "wins": 16,
+    "losses": 13,
+    "no_results": 1,
+    "win_percentage": 55.2,
+    "short_team": "KCC"
+  },
+  {
+    "team": "GL Bajaj Cricket Club",
+    "matches": 30,
+    "wins": 11,
+    "losses": 18,
+    "no_results": 1,
+    "win_percentage": 37.9,
+    "short_team": "GLB"
+  }
+]
