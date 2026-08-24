@@ -1,0 +1,23 @@
+NICT CRICKET - VERCEL DEPLOYMENT
+
+Root Directory:
+.
+
+Framework Preset:
+Other
+
+Build Command:
+Leave empty
+
+Output Directory:
+Leave empty
+
+Install Command:
+Leave empty
+
+The project is a frontend/static application. vercel.json is included.
+
+GitHub:
+git add .
+git commit -m "Update NICT cricket project"
+git push origin main

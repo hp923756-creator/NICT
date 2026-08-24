@@ -69,7 +69,7 @@ function matches(){
  const rows=(DATA.live_matches||[]).map((m,i)=>`<tr><td>${esc(m.match_id||"MATCH-"+(i+1))}</td><td>${esc(m.format||"")}</td><td><b>${esc(st(m.team_a))}</b> vs <b>${esc(st(m.team_b))}</b></td><td><span class="pill ${m.status==="completed"?"":"live-pill"}">${esc(m.status||"Replay")}</span></td><td><button class="btn" onclick="startLive(${i})">Watch</button></td></tr>`);
  app.innerHTML=head("Matches","Every uploaded match is normalized to short team names")+table(["Match","Format","Teams","Status",""],rows);
 }
-function startLive(i){localStorage.setItem("nict_active_match",String(i));replayStart=Date.now();localStorage.setItem("nict_replay_start",String(replayStart));replayIndex=0;replayNextAt=Date.now()+(TOSS_BREAK_SECONDS*1000);localStorage.setItem("nict_replay_index","0");localStorage.setItem("nict_replay_next_at",String(replayNextAt));view="live";render()}
+function startLive(i){localStorage.setItem("nict_active_match",String(i));replayStart=Date.now();localStorage.setItem("nict_replay_start",String(replayStart));view="live";render()}
 
 function getActiveMatch(){
  const i=Number(localStorage.getItem("nict_active_match")||0);
@@ -77,11 +77,9 @@ function getActiveMatch(){
 }
 
 let replayStart=Number(localStorage.getItem("nict_replay_start")||0);
-let replayIndex=Number(localStorage.getItem("nict_replay_index")||0);
-let replayNextAt=Number(localStorage.getItem("nict_replay_next_at")||0);
 function live(){
  const m=getActiveMatch(); if(!m){app.innerHTML=head("Live Scores")+"<div class='card empty'>No match loaded.</div>";return}
- if(!replayStart){replayStart=Date.now();localStorage.setItem("nict_replay_start",String(replayStart));replayIndex=0;replayNextAt=Date.now()+(TOSS_BREAK_SECONDS*1000);localStorage.setItem("nict_replay_index","0");localStorage.setItem("nict_replay_next_at",String(replayNextAt))}
+ if(!replayStart){replayStart=Date.now();localStorage.setItem("nict_replay_start",String(replayStart))}
  if(!liveTimer)liveTimer=setInterval(()=>{if(view==="live"){const active=getActiveMatch();if(active)renderLive(active)}},1000);
  renderLive(m);
 }
@@ -127,7 +125,8 @@ function updateCareerFromMatch(m){
 }
 function renderLive(raw){
  const m=normalizedMatch(raw), ds=m.deliveries||[];
- const replayState=getStrictReplayState(ds,m), shown=ds.slice(0,replayState.idx);
+ const elapsed=Math.max(0,(Date.now()-replayStart)/1000);
+ const replayState=getReplayState(ds,elapsed,m), shown=ds.slice(0,replayState.idx);
  const state=calcMatch(shown,m);
  if(m.file_name&&shown.length===ds.length&&ds.length){updateCareerFromMatch(m);}
  const currentInnings=state.innings;
@@ -149,53 +148,16 @@ function renderLive(raw){
  <div class="section"><h2>Commentary</h2>${comments||"<div class='empty'>No commentary yet.</div>"}</div>`;
 }
 function deliveryIndex(ds,elapsed){
- return Math.min(ds.length,Math.max(0,Math.floor(Number(elapsed||0)/BALL_DELAY_SECONDS)));
-}
-function strictReplayDurationForBall(ds,i){
- if(i<=0)return BALL_DELAY_SECONDS;
- const prev=ds[i-1];
- const legalBefore=ds.slice(0,i).filter(legalBall).length;
- const newOver=legalBall(prev)&&legalBefore>0&&legalBefore%6===0;
- return BALL_DELAY_SECONDS+(newOver?OVER_BREAK_SECONDS:0);
-}
-function getStrictReplayState(ds,m){
- const now=Date.now();
- if(!ds.length)return {idx:0,event:null};
-
- if(!replayNextAt){
-   replayIndex=0;
-   replayNextAt=now+(m.toss_winner?TOSS_BREAK_SECONDS*1000:BALL_DELAY_SECONDS*1000);
-   localStorage.setItem("nict_replay_index","0");
-   localStorage.setItem("nict_replay_next_at",String(replayNextAt));
+ if(!ds.length)return 0;
+ let t=0;
+ for(let i=0;i<ds.length;i++){
+   const prev=i?ds[i-1]:null;
+  const overBreak=prev && legalBall(prev) && legalCountBefore(ds,i)%6===0 ? OVER_BREAK_SECONDS:0;
+  const dur=BALL_DELAY_SECONDS+overBreak;
+   if(elapsed<t+dur)return i;
+   t+=dur;
  }
-
- // Advance AT MOST ONE delivery. No elapsed-time catch-up.
- // This guarantees 1.1 -> 1.2 -> 1.3 ... without jumps.
- if(replayIndex<ds.length&&now>=replayNextAt){
-   replayIndex++;
-   localStorage.setItem("nict_replay_index",String(replayIndex));
-
-   if(replayIndex<ds.length){
-     replayNextAt=now+strictReplayDurationForBall(ds,replayIndex)*1000;
-     localStorage.setItem("nict_replay_next_at",String(replayNextAt));
-   }else{
-     replayNextAt=0;
-     localStorage.setItem("nict_replay_next_at","0");
-   }
- }
-
- let event=null;
- if(replayIndex===0){
-   event=m.toss_winner
-    ?{type:"toss",remaining:Math.max(0,(replayNextAt-now)/1000)}
-    :{type:"match_start",remaining:Math.max(0,(replayNextAt-now)/1000)};
- }else if(replayIndex<ds.length){
-   const legalBefore=ds.slice(0,replayIndex).filter(legalBall).length;
-   if(legalBefore>0&&legalBefore%6===0){
-     event={type:"over_break",remaining:Math.max(0,(replayNextAt-now)/1000)};
-   }
- }
- return {idx:replayIndex,event};
+ return ds.length;
 }
 function formatCountdown(seconds){
  const s=Math.max(0,Math.ceil(Number(seconds||0)));
@@ -204,7 +166,6 @@ function formatCountdown(seconds){
 }
 function eventLabel(event){
  if(event.type==="toss")return `Toss result confirmed · First ball in ${formatCountdown(event.remaining)}`;
-  if(event.type==="match_start")return `Match starts in ${formatCountdown(event.remaining)}`;
  if(event.type==="innings_break")return `Innings break · Second innings in ${formatCountdown(event.remaining)}`;
  if(event.type==="over_break")return `Over break · Next ball in ${formatCountdown(event.remaining)}`;
  if(event.type==="tea")return `Tea break · Play resumes in ${formatCountdown(event.remaining)}`;
