@@ -9,6 +9,8 @@ async function cloudMatches(){
     if(!r.ok)throw new Error(await r.text());
     const rows=await r.json();
     CLOUD_MATCHES=(Array.isArray(rows)?rows:[]).map(x=>x.match_json||x);
+    DATA.live_matches=CLOUD_MATCHES;
+    localStorage.setItem("nict_uploaded_matches",JSON.stringify(CLOUD_MATCHES));
     return CLOUD_MATCHES;
   }catch(e){console.warn("Shared match server unavailable:",e);return []}
 }
@@ -35,10 +37,19 @@ function st(x){return TEAM_MAP[String(x||"").trim()]||String(x||"").trim()}
 function fmt(x){return Number(x||0).toLocaleString("en-IN")}
 function logo(t,cls="team-logo"){return `<img class="${cls}" src="${LOGOS[st(t)]||""}" alt="${esc(st(t))}">`}
 function navigate(v){view=v;closeMenu();render();scrollTo(0,0)}
-function closeMenu(){document.getElementById("drawer").classList.remove("open");document.getElementById("overlay").classList.remove("show")}
+function closeMenu(){
+  document.getElementById("drawer")?.classList.remove("open");
+  document.getElementById("overlay")?.classList.remove("show");
+  document.getElementById("menuBtn")?.setAttribute("aria-expanded","false");
+}
 document.querySelectorAll("[data-view]").forEach(b=>b.addEventListener("click",()=>navigate(b.dataset.view)));
-document.getElementById("menuBtn").onclick=()=>{document.getElementById("drawer").classList.add("open");document.getElementById("overlay").classList.add("show")};
-document.getElementById("closeMenu").onclick=closeMenu;document.getElementById("overlay").onclick=closeMenu;
+document.getElementById("menuBtn")?.addEventListener("click",()=>{
+  document.getElementById("drawer")?.classList.add("open");
+  document.getElementById("overlay")?.classList.add("show");
+  document.getElementById("menuBtn")?.setAttribute("aria-expanded","true");
+});
+document.getElementById("closeMenu")?.addEventListener("click",closeMenu);
+document.getElementById("overlay")?.addEventListener("click",closeMenu);
 
 function head(title,sub=""){return `<div class="page-head"><div><h1>${esc(title)}</h1>${sub?`<div class="muted">${esc(sub)}</div>`:""}</div></div>`}
 function table(h,rows){return `<div class="table-wrap"><table class="table"><thead><tr>${h.map(x=>`<th>${x}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody></table></div>`}
@@ -47,7 +58,7 @@ function playerLink(name){return `<a href="#" onclick="player('${esc(name)}');re
 
 async function loadData(){
  const names=["players_format","career_records","ratings","batting_rankings","bowling_rankings","catches","teams","squads","opponent_records","live_matches"];
- for(const n of names){try{DATA[n]=await fetch(`data/${n}.json`).then(r=>r.json())}catch(e){DATA[n]=[]}}
+ for(const n of names){try{DATA[n]=await fetch(`data/${n}.json`,{cache:"no-store"}).then(r=>r.json())}catch(e){DATA[n]=[]}}
  const local=JSON.parse(localStorage.getItem("nict_uploaded_matches")||"[]");
  DATA.live_matches=local;
  const savedCareer=JSON.parse(localStorage.getItem("nict_career_records")||"null");
@@ -55,14 +66,43 @@ async function loadData(){
  if(savedCareer)DATA.career_records=savedCareer;
  if(savedFormats)DATA.players_format=savedFormats;
  loadSavedPerformance();
+ try{
+   const cloud=await cloudMatches();
+   if(Array.isArray(cloud)&&cloud.length){
+     DATA.live_matches=cloud;
+     localStorage.setItem("nict_uploaded_matches",JSON.stringify(cloud));
+   }
+ }catch(e){console.warn("Cloud initial load failed",e)}
+ selectSharedMatchFromURL();
+ startCloudPolling();
  render();
+}
+
+function startCloudPolling(){
+ if(window.__nictCloudPoll)return;
+ window.__nictCloudPoll=setInterval(async()=>{
+   try{
+     const cloud=await cloudMatches();
+     if(Array.isArray(cloud)&&cloud.length){
+       DATA.live_matches=cloud;
+       localStorage.setItem("nict_uploaded_matches",JSON.stringify(cloud));
+       if(view==="live"){renderLive(getActiveMatch())}
+       if(view==="matches"){matches()}
+       if(view==="admin"){renderAdminMatches()}
+     }
+   }catch(e){console.warn("Cloud polling failed",e)}
+ },3000);
 }
 
 function selectSharedMatchFromURL(){
   const id=new URLSearchParams(location.search).get("match");
   if(!id)return;
-  const m=(DATA.live_matches||[]).find(x=>String(x.match_id)===String(id));
-  if(m){localStorage.setItem("nict_active_match_id",String(id));view="live";}
+  const idx=(DATA.live_matches||[]).findIndex(x=>String(x.match_id||x.id||"")===String(id));
+  if(idx>=0){
+    localStorage.setItem("nict_active_match_id",String(id));
+    localStorage.setItem("nict_active_match",String(idx));
+    view="live";
+  }
 }
 function render(){
   selectSharedMatchFromURL();
@@ -99,6 +139,11 @@ function matches(){
 function startLive(i){const m=DATA.live_matches?.[i];if(m)localStorage.setItem("nict_active_match_id",String(m.match_id||m.file_name||""));localStorage.setItem("nict_active_match",String(i));view="live";render()}
 
 function getActiveMatch(){
+ const id=localStorage.getItem("nict_active_match_id")||new URLSearchParams(location.search).get("match")||"";
+ if(id){
+   const byId=(DATA.live_matches||[]).find(x=>String(x.match_id||x.id||"")===String(id));
+   if(byId)return byId;
+ }
  const i=Number(localStorage.getItem("nict_active_match")||0);
  return DATA.live_matches?.[i]||DATA.live_matches?.[0];
 }
@@ -241,7 +286,7 @@ function getReplayState(ds,elapsed,m){
       legalInCurrentOver=0;
     }
 
-    // 2-minute break after every completed over.
+    // 60-second break after every completed over.
     if(i>0 && legalInCurrentOver===0){
       if(elapsed<time+OVER_BREAK_SECONDS){
         return {
@@ -341,7 +386,24 @@ function calcMatch(ds,m,forcedInnings=null){
  }
 
  const s=bat[striker]||null,n=bat[non]||null;
- const partnership={runs:(s?.runs||0)+(n?.runs||0),balls:(s?.balls||0)+(n?.balls||0)};
+ /*
+  Partnership runs include ALL runs scored while the current pair
+  is together, including Wide and No-ball extra runs.
+  Wides and No-balls remain illegal deliveries for batter balls.
+ */
+ let partnershipStart=0;
+ for(let j=current.length-1;j>=0;j--){
+   if(Number(current[j].wicket||0)>0){
+     partnershipStart=j+1;
+     break;
+   }
+ }
+ const partnershipDeliveries=current.slice(partnershipStart);
+ const partnershipRuns=partnershipDeliveries.reduce(
+   (sum,d)=>sum+Number(d.runs||0)+Number(d.extra_runs||0),0
+ );
+ const partnershipBalls=partnershipDeliveries.filter(legalBall).length;
+ const partnership={runs:partnershipRuns,balls:partnershipBalls};
  const last=current[current.length-1];
  const bw=bowl[last?.bowler]||{name:last?.bowler||"",legal:0,runs:0,wickets:0};
  bw.overs=`${Math.floor(bw.legal/6)}.${bw.legal%6}`;
@@ -405,7 +467,25 @@ function bowlingCard(state){
  return table(["Bowler","O","M","R","W","Econ"],rows);
 }
 function allInningsCards(ds,m){
- return Array.from({length:4},(_,index)=>{const innings=index+1, inningsData=ds.filter(d=>Number(d.innings||1)===innings), state=calcMatch(inningsData,m,innings), battingTeam=state.team, bowlingTeam=battingTeam===st(m.team_a)?st(m.team_b):st(m.team_a);return `<div class="section"><h2>Innings ${innings}: ${esc(battingTeam)} batting</h2><div class="muted innings-summary">${inningsData.length?`${state.runs}/${state.wickets} · ${state.overs} overs`:`Not started`}</div><h3>Batting Scorecard</h3>${inningsData.length?battingCard(state,m):`<div class="card empty">No deliveries recorded.</div>`}<h3>Bowling Card: ${esc(bowlingTeam)}</h3>${inningsData.length?bowlingCard(state):`<div class="card empty">No deliveries recorded.</div>`}</div>`}).join("");
+  const format=careerFormat(m.format);
+  const inningsCount=format==="Test"?4:2;
+  return Array.from({length:inningsCount},(_,index)=>{
+    const innings=index+1;
+    const inningsData=ds.filter(d=>Number(d.innings||1)===innings);
+    const state=calcMatch(inningsData,m,innings);
+    const battingTeam=state.team;
+    const bowlingTeam=battingTeam===st(m.team_a)?st(m.team_b):st(m.team_a);
+    return `<div class="section innings-card">
+      <h2>Innings ${innings}: ${esc(battingTeam)} batting</h2>
+      <div class="muted innings-summary">
+        ${inningsData.length?`${state.runs}/${state.wickets} · ${state.overs} overs`:"Not started"}
+      </div>
+      <h3>Batting Scorecard</h3>
+      ${inningsData.length?battingCard(state,m):`<div class="card empty">No deliveries recorded.</div>`}
+      <h3>Bowling Card: ${esc(bowlingTeam)}</h3>
+      ${inningsData.length?bowlingCard(state):`<div class="card empty">No deliveries recorded.</div>`}
+    </div>`;
+  }).join("");
 }
 function playingXI(m,a,b){
  const ix=m.playing_xi||{};
@@ -664,7 +744,7 @@ function admin(){
  if(sessionStorage.getItem("nict_admin")==="true")return adminPanel();
  app.innerHTML=`<div class="admin-lock card"><h1>🔒 Admin</h1><p class="muted">Enter the tournament admin password.</p><input id="adminPass" class="input" type="password" placeholder="Password"><button class="btn" onclick="unlock()">Unlock Admin</button><p id="adminMsg" class="muted"></p></div>`;
 }
-function unlock(){const p=document.getElementById("adminPass").value;if(p==="12309856"){sessionStorage.setItem("nict_admin","true");sessionStorage.setItem("nict_admin_password",p);adminPanel()}else document.getElementById("adminMsg").textContent="Incorrect password."}
+function unlock(){const p=document.getElementById("adminPass").value;if(p==="@@098"){sessionStorage.setItem("nict_admin","true");sessionStorage.setItem("nict_admin_password",p);adminPanel()}else document.getElementById("adminMsg").textContent="Incorrect password."}
 function adminPanel(){
  app.innerHTML=head("Admin","Upload a complete ball-by-ball JSON and start it in the frontend viewer")+
  `<div class="notice">Upload format: JSON with <b>deliveries</b>. Team names are normalized automatically. A filename such as <b>GCET_vs_GLB.json</b> is also understood. Uploaded matches are stored in this browser.</div>
@@ -691,9 +771,39 @@ async function rebuildCareerFromCompletedMatches(){
 
 function renderAdminMatches(){
  const box=document.getElementById("adminMatches");if(!box)return;
- const local=JSON.parse(localStorage.getItem("nict_uploaded_matches")||"[]");
- const rows=local.map((m,i)=>`<div class="match-card"><b>${esc(st(m.team_a))} vs ${esc(st(m.team_b))}</b><div class="muted">${esc(m.format||"")} · ${esc(m.match_id||"")}</div><div class="event-controls"><label>Event after <select id="eventBall${i}" class="input">${eventBallOptions(m)}</select></label><button class="btn" onclick="addMatchEvent(${i},'tea')">Tea break</button><button class="btn" onclick="addMatchEvent(${i},'drinks')">Drinks break</button><button class="btn" onclick="addMatchEvent(${i},'rain')">Rain suspension</button><button class="btn" onclick="addMatchEvent(${i},'draw')">Draw</button><button class="btn secondary" onclick="resumeRain(${i})">Resume rain</button></div><div style="margin-top:8px"><button class="btn" onclick="useUploaded(${i})">Use Live</button> <button class="btn danger" onclick="deleteUploaded(${i})">Delete</button></div></div>`).join("");
- box.innerHTML=rows||`<div class="empty">No browser-uploaded matches yet.</div>`;
+ const local=Array.isArray(DATA.live_matches)?DATA.live_matches:[];
+ const rows=local.map((m,i)=>{
+   const status=String(m.status||"upcoming").toLowerCase();
+   const action=status==="live"
+     ? `<button class="btn" onclick="startLive(${i})">Open Live</button>`
+     : status==="completed"
+       ? `<button class="btn" onclick="startLive(${i})">View Scorecard</button>`
+       : `<button class="btn" onclick="useUploaded(${i})">▶ Start Match</button>`;
+   const complete=status==="completed"
+     ? ""
+     : `<button class="btn secondary" onclick="completeMatch(${i})">Complete Match</button>`;
+   return `<div class="match-card">
+     <b>${esc(st(m.team_a))} vs ${esc(st(m.team_b))}</b>
+     <div class="muted">${esc(m.format||"")} · ${esc(m.match_id||"")}</div>
+     <div class="pill ${status==="live"?"live-pill":""}">${esc(status.toUpperCase())}</div>
+     <div class="event-controls">
+       <label>Event after
+         <select id="eventBall${i}" class="input">${eventBallOptions(m)}</select>
+       </label>
+       <button class="btn" onclick="addMatchEvent(${i},'tea')">Tea break</button>
+       <button class="btn" onclick="addMatchEvent(${i},'drinks')">Drinks break</button>
+       <button class="btn" onclick="addMatchEvent(${i},'rain')">Rain suspension</button>
+       <button class="btn" onclick="addMatchEvent(${i},'draw')">Draw</button>
+       <button class="btn secondary" onclick="resumeRain(${i})">Resume rain</button>
+     </div>
+     <div style="margin-top:8px">
+       ${action}
+       ${complete}
+       <button class="btn danger" onclick="deleteUploaded(${i})">Delete</button>
+     </div>
+   </div>`;
+ }).join("");
+ box.innerHTML=rows||`<div class="empty">No matches available on the shared server yet.</div>`;
 }
 function eventBallOptions(m){const count=(m.deliveries||[]).length;return Array.from({length:count+1},(_,i)=>`<option value="${i}">${i===0?"Before first ball":`After ball ${i}`}</option>`).join("")}
 function saveUploadedMatches(local){localStorage.setItem("nict_uploaded_matches",JSON.stringify(local));DATA.live_matches=local}
@@ -730,12 +840,31 @@ async function useUploaded(i){
   const m=DATA.live_matches?.[i];if(!m)return;
   try{
     const updated={...m,status:"live",started_at:new Date().toISOString()};
-    await adminCloud("POST",updated);
+    const response=await adminCloud("POST",updated);
     DATA.live_matches=await cloudMatches();
-    const fresh=DATA.live_matches.find(x=>String(x.match_id)===String(m.match_id))||updated;
+    const fresh=DATA.live_matches.find(x=>String(x.match_id)===String(m.match_id))
+      || response?.match_json
+      || updated;
     localStorage.setItem("nict_active_match_id",String(fresh.match_id));
-    view="live";render();
+    localStorage.setItem("nict_active_match",String(
+      DATA.live_matches.findIndex(x=>String(x.match_id)===String(fresh.match_id))
+    ));
+    view="live";
+    render();
   }catch(e){alert("Could not start shared live match: "+e.message)}
+}
+async function completeMatch(i){
+  const m=DATA.live_matches?.[i];
+  if(!m)return;
+  if(!confirm(`Mark ${m.team_a} vs ${m.team_b} as completed?`))return;
+  try{
+    const updated={...m,status:"completed"};
+    await adminCloud("PATCH",updated,m.match_id);
+    DATA.live_matches=await cloudMatches();
+    renderAdminMatches();
+  }catch(e){
+    alert("Complete match failed: "+e.message);
+  }
 }
 async function deleteUploaded(i){
   const m=DATA.live_matches?.[i];if(!m)return;

@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>NICT — Noida Intercollege Cricket Tournament</title>
+
+    <meta
+        name="description"
+        content="NICT Cricket Centre — live cricket, matches, teams, players, rankings and records."
+    >
+
+    <meta name="theme-color" content="#079b79">
+
+    <!--
+      ==========================================================
+      NICT FINAL FRONTEND STRUCTURE
+      ==========================================================
+
+      ZIP currently contains TWO app.js files:
+
+        NICT-main/app.js
+        NICT-main/NICT-main/app.js
+
+      IMPORTANT:
+        This index intentionally loads the SECOND one:
+
+          NICT-main/NICT-main/app.js
+
+      because that is the full application containing:
+        - Home
+        - Live
+        - Matches
+        - Teams
+        - Players
+        - Rankings
+        - Records
+        - Statistics
+        - Head to Head
+        - Career records
+        - Admin
+        - Supabase multi-device support
+        - 20 sec ball replay
+        - 60 sec over break
+        - 15 min innings break
+        - full scorecard
+        - format selectors
+
+      The outer NICT-main/app.js is the old stripped-down
+      browser-only version and must NOT be loaded by this page.
+    -->
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+    <style>
+        /*
+          Small compatibility layer.
+          The real theme remains style.css.
+        */
+
+        .brand-box{
+            display:flex;
+            align-items:center;
+            gap:8px;
+        }
+
+        .brand-logo{
+            width:42px;
+            height:42px;
+            object-fit:contain;
+            border-radius:8px;
+        }
+
+        .admin-nav{
+            color:#a35b00 !important;
+        }
+
+        .admin-nav::before{
+            content:"🔒 ";
+        }
+
+        .desktop-nav{
+            display:flex;
+            align-items:center;
+            gap:2px;
+            flex:1;
+            overflow-x:auto;
+            scrollbar-width:none;
+        }
+
+        .desktop-nav::-webkit-scrollbar{
+            display:none;
+        }
+
+        .desktop-nav button{
+            white-space:nowrap;
+        }
+
+        .drawer{
+            z-index:100;
+        }
+
+        #overlay{
+            z-index:90;
+        }
+
+        /*
+          Keep the main application above the page background.
+        */
+        #app{
+            min-height:calc(100vh - 110px);
+        }
+
+        @media(max-width:800px){
+            .topbar{
+                padding:0 10px;
+                gap:8px;
+            }
+
+            .desktop-nav{
+                display:none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- ==========================================================
+     TOP NAVIGATION
+     ========================================================== -->
+
+<header class="topbar">
+
+    <!-- Logo / Home -->
+    <button
+        type="button"
+        class="brand"
+        onclick="navigate('home')"
+        aria-label="NICT Home"
+    >
+        <span class="brand-box">
+
+            <img
+                class="brand-logo"
+                src="assets/logos/GCET.png"
+                alt="NICT"
+                onerror="this.style.display='none'"
+            >
+
+            <span>
+                <strong>NICT</strong>
+                <br>
+                <small>
+                    NOIDA INTERCOLLEGE CRICKET
+                </small>
+            </span>
+
+        </span>
+    </button>
+
+    <!-- ======================================================
+         MAIN NAV
+         app.js listens to [data-view]
+         ====================================================== -->
+
+    <nav
+        class="desktop-nav"
+        aria-label="Main navigation"
+    >
+
+        <button
+            type="button"
+            data-view="home"
+        >
+            Home
+        </button>
+
+        <button
+            type="button"
+            data-view="live"
+        >
+            Live
+        </button>
+
+        <button
+            type="button"
+            data-view="matches"
+        >
+            Matches
+        </button>
+
+        <button
+            type="button"
+            data-view="teams"
+        >
+            Teams
+        </button>
+
+        <button
+            type="button"
+            data-view="players"
+        >
+            Players
+        </button>
+
+        <button
+            type="button"
+            data-view="rankings"
+        >
+            Rankings
+        </button>
+
+        <button
+            type="button"
+            data-view="records"
+        >
+            Records
+        </button>
+
+    </nav>
+
+    <!-- ======================================================
+         MENU BUTTON
+         ====================================================== -->
+
+    <button
+        id="menuBtn"
+        class="menu-btn"
+        type="button"
+        aria-label="Open NICT menu"
+        aria-controls="drawer"
+        aria-expanded="false"
+    >
+        ☰ Menu
+    </button>
+
+</header>
+
+
+<!-- ==========================================================
+     SIDE MENU OVERLAY
+     ========================================================== -->
+
+<div
+    id="overlay"
+    aria-hidden="true"
+></div>
+
+
+<!-- ==========================================================
+     SIDE MENU / ADDITIONAL FEATURES
+     ========================================================== -->
+
+<aside
+    id="drawer"
+    class="drawer"
+    aria-label="NICT Menu"
+>
+
+    <div class="drawer-head">
+
+        <strong>
+            NICT Menu
+        </strong>
+
+        <button
+            id="closeMenu"
+            type="button"
+            aria-label="Close menu"
+        >
+            ×
+        </button>
+
+    </div>
+
+
+    <!-- Statistics -->
+    <button
+        type="button"
+        data-view="stats"
+    >
+        📊 Statistics
+    </button>
+
+
+    <!-- Head to Head -->
+    <button
+        type="button"
+        data-view="headToHead"
+    >
+        ⚔️ Head to Head
+    </button>
+
+
+    <!-- Career -->
+    <button
+        type="button"
+        data-view="careerRecords"
+    >
+        🏆 Career Records
+    </button>
+
+
+    <!-- Rankings -->
+    <button
+        type="button"
+        data-view="batRankings"
+    >
+        🏏 Batting Rankings
+    </button>
+
+    <button
+        type="button"
+        data-view="bowlRankings"
+    >
+        🎯 Bowling Rankings
+    </button>
+
+    <button
+        type="button"
+        data-view="allRoundRankings"
+    >
+        ⭐ All-round Rankings
+    </button>
+
+
+    <!-- Team / fielding records -->
+    <button
+        type="button"
+        data-view="teamRecords"
+    >
+        🏫 Team Records
+    </button>
+
+    <button
+        type="button"
+        data-view="catchRecords"
+    >
+        🧤 Catch Records
+    </button>
+
+
+    <!-- Batting records -->
+    <button
+        type="button"
+        data-view="centuryRecords"
+    >
+        💯 Most Centuries
+    </button>
+
+    <button
+        type="button"
+        data-view="fiftyRecords"
+    >
+        5️⃣ Most 50+ Scores
+    </button>
+
+    <button
+        type="button"
+        data-view="sixRecords"
+    >
+        6️⃣ Most Sixes
+    </button>
+
+    <button
+        type="button"
+        data-view="fourRecords"
+    >
+        4️⃣ Most Fours
+    </button>
+
+
+    <!-- Bowling records -->
+    <button
+        type="button"
+        data-view="wicketRecords"
+    >
+        🎯 Most Wickets
+    </button>
+
+
+    <!-- ======================================================
+         ADMIN
+         ======================================================
+
+         The password is NOT placed in this HTML.
+
+         app.js performs the actual check:
+
+             @@098
+
+         Admin stays locked until the user enters it.
+         ====================================================== -->
+
+    <button
+        type="button"
+        class="admin-nav"
+        data-view="admin"
+    >
+        Admin Panel
+    </button>
+
+</aside>
+
+
+<!-- ==========================================================
+     APPLICATION ROOT
+
+     The full nested app.js renders everything inside #app.
+     ========================================================== -->
+
+<main id="app">
+
+    <div class="card empty">
+        Loading NICT Cricket Centre...
+    </div>
+
+</main>
+
+
+<!-- ==========================================================
+     FOOTER
+     ========================================================== -->
+
+<footer
+    style="
+        text-align:center;
+        padding:20px;
+        color:#667085;
+        font-size:12px;
+    "
+>
+    NICT — Noida Intercollege Cricket Tournament
+    <br>
+    Live Cricket · Players · Rankings · Records
+</footer>
+
+
+<!-- ==========================================================
+     FINAL SCRIPT
+
+     VERY IMPORTANT:
+     DO NOT CHANGE THIS TO "app.js".
+
+     It must load the FULL application:
+
+         NICT-main/NICT-main/app.js
+
+     Because this index.html is located in:
+
+         NICT-main/index.html
+     ========================================================== -->
+
+<script
+    src="app.js"
+    defer
+></script>
+
+</body>
+</html>

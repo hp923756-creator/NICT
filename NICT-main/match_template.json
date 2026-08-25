@@ -1,0 +1,199 @@
+{
+  "match_id": "NICT-T20-GCET-vs-GLB-001",
+  "format": "T20",
+  "series": "NICT 2026 T20 Tournament",
+  "competition": "NICT",
+  "season": "2026",
+  "match_number": "Match 1",
+  "date": "2026-08-25",
+  "start_time_local": "19:00",
+  "timezone": "Asia/Kolkata",
+  "venue": "Noida Intercollege Cricket Ground",
+  "city": "Noida",
+  "country": "India",
+  "toss": {
+    "winner": "GLB",
+    "decision": "bat",
+    "text": "GLB won the toss and chose to bat"
+  },
+  "team_a": "GCET",
+  "team_b": "GLB",
+  "batting_first": "GLB",
+  "batting_second": "GCET",
+  "result": {
+    "status": "scheduled",
+    "winner": "",
+    "margin_type": "",
+    "margin_value": 0,
+    "text": ""
+  },
+  "officials": {
+    "umpire_1": "Rajesh Kumar",
+    "umpire_2": "Sanjay Verma",
+    "third_umpire": "",
+    "match_referee": "",
+    "scorer_1": "",
+    "scorer_2": ""
+  },
+  "rules": {
+    "overs_per_innings": 20,
+    "innings_count": 2,
+    "ball_delay_seconds": 20,
+    "over_break_seconds": 60,
+    "innings_break_seconds": 900,
+    "pre_match_delay_seconds": 900,
+    "no_ball_penalty_runs": 1,
+    "wide_penalty_runs": 1,
+    "free_hit_after_no_ball": true,
+    "wide_is_legal_delivery": false,
+    "no_ball_is_legal_delivery": false,
+    "strike_changes_on_completed_runs": true,
+    "strike_changes_at_end_of_over": true,
+    "bowler_changes_at_end_of_over": true,
+    "partnership_includes_wides": true,
+    "partnership_includes_no_ball_extras": true,
+    "t20_bowler_max_overs": 4
+  },
+  "playing_xi": {
+    "GCET": [],
+    "GLB": []
+  },
+  "squad": {
+    "GCET": [],
+    "GLB": []
+  },
+  "innings": [
+    {
+      "innings": 1,
+      "batting_team": "GLB",
+      "bowling_team": "GCET",
+      "overs_limit": 20,
+      "target": null,
+      "status": "not_started",
+      "scorecard": {
+        "batting": [],
+        "extras": {
+          "total": 0,
+          "wides": 0,
+          "no_balls": 0,
+          "byes": 0,
+          "leg_byes": 0,
+          "penalty": 0
+        },
+        "total": {
+          "runs": 0,
+          "wickets": 0,
+          "overs": "0.0",
+          "run_rate": 0
+        },
+        "did_not_bat": [],
+        "bowling": [],
+        "partnerships": []
+      },
+      "deliveries": []
+    },
+    {
+      "innings": 2,
+      "batting_team": "GCET",
+      "bowling_team": "GLB",
+      "overs_limit": 20,
+      "target": null,
+      "status": "not_started",
+      "scorecard": {
+        "batting": [],
+        "extras": {
+          "total": 0,
+          "wides": 0,
+          "no_balls": 0,
+          "byes": 0,
+          "leg_byes": 0,
+          "penalty": 0
+        },
+        "total": {
+          "runs": 0,
+          "wickets": 0,
+          "overs": "0.0",
+          "run_rate": 0
+        },
+        "did_not_bat": [],
+        "bowling": [],
+        "partnerships": []
+      },
+      "deliveries": []
+    }
+  ],
+  "deliveries": [
+    {
+      "match_id": "NICT-T20-GCET-vs-GLB-001",
+      "delivery_index": 0,
+      "innings": 1,
+      "over": 1,
+      "ball": 1,
+      "ball_label": "1.1",
+      "batsman": "GLB Batter 1",
+      "striker": "GLB Batter 1",
+      "non_striker": "GLB Batter 2",
+      "bowler": "GCET Bowler 1",
+      "batsman_team": "GLB",
+      "bowling_team": "GCET",
+      "striker_end_before": "striker_end",
+      "non_striker_end_before": "bowler_end",
+      "striker_end_after": "striker_end",
+      "non_striker_end_after": "bowler_end",
+      "runs": 0,
+      "runs_off_bat": 0,
+      "extra_type": "",
+      "extra_runs": 0,
+      "extras": {
+        "wides": 0,
+        "no_balls": 0,
+        "byes": 0,
+        "leg_byes": 0,
+        "penalty": 0
+      },
+      "total_runs": 0,
+      "legal_delivery": true,
+      "free_hit_before": false,
+      "free_hit_after": false,
+      "wicket": 0,
+      "wicket_type": "",
+      "dismissed_player": "",
+      "fielder": "",
+      "shot": "Defence",
+      "shot_direction": "Cover",
+      "length": "Good length",
+      "line": "Outside off",
+      "runs_completed": 0,
+      "short_run": false,
+      "boundary": false,
+      "commentary": "Good length outside off, defended into cover.",
+      "review": {
+        "taken": false,
+        "decision": "",
+        "team": ""
+      }
+    }
+  ],
+  "events": [],
+  "scorecard_display": {
+    "innings_tabs": true,
+    "limited_overs_tabs": "2 innings",
+    "test_tabs": "4 innings",
+    "show_batting": true,
+    "show_extras": true,
+    "show_total": true,
+    "show_did_not_bat": true,
+    "show_bowling": true,
+    "show_partnerships": true,
+    "show_current_ball": true,
+    "show_commentary": true
+  },
+  "audit": {
+    "created_by": "",
+    "created_at": "",
+    "updated_at": "",
+    "started_at": null,
+    "completed_at": null,
+    "status": "upcoming"
+  }
+}

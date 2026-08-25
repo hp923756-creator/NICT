@@ -1,0 +1,34 @@
+NICT FINAL BUILD
+================
+
+Project root:
+  NICT-main/
+
+Frontend:
+  index.html
+  app.js
+  style.css
+
+API:
+  api/matches.js
+  api/stats.js
+
+Database:
+  supabase_schema.sql
+
+Admin password expected by frontend:
+  @@098
+
+Vercel environment variables:
+  SUPABASE_URL
+  SUPABASE_SERVICE_ROLE_KEY
+  ADMIN_PASSWORD=@@098
+
+Important:
+- Run supabase_schema.sql in Supabase SQL Editor.
+- Deploy the NICT-main folder as the Vercel project root.
+- The service-role key must remain server-side only.
+- Live replay uses the shared match started_at timestamp.
+- Replay timing: 20 seconds per delivery, 60 seconds after each completed over,
+  and 15 minutes between innings where applicable.
+- T20/ODI show two innings; Test shows four innings when the JSON contains them.
