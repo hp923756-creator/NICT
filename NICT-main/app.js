@@ -1,5 +1,5 @@
 * ============================================================
-   NICT FINAL APP.JS — THREE LOGO CHANGES ONLY
+   NICA FINAL APP.JS — BRANDING / LOGO UPDATE
    ============================================================
 
    Based on the full application app.js from the latest project.
@@ -8,7 +8,7 @@
    1. Playing XI: team logo removed.
    2. Team Records: kept exactly as-is (there was already no logo
       rendered in the teamRecords() function).
-   3. Main NICT/GCET header logo:
+   3. Main NICA header logo:
       IMPORTANT — the header is rendered by index.html, NOT this
       app.js. Therefore it cannot be safely changed here without
       changing index.html. No other team-logo usage in app.js has
@@ -140,7 +140,7 @@ function render(){
 
 function home(){
  const m=DATA.live_matches?.[0];
- app.innerHTML=head("NICT Cricket Centre","Live cricket, player career statistics, rankings and tournament records")+
+ app.innerHTML=head("NICA Cricket Association","Live cricket, player career statistics, rankings and tournament records")+
  `<div class="grid">
   <div class="card"><h3>Players</h3><div class="big">${DATA.career_records.length}</div><span class="muted">20 players per team</span></div>
   <div class="card"><h3>Teams</h3><div class="big">${DATA.teams.length}</div><span class="muted">GCET · GLB · ABES · JSS · KCC</span></div>
