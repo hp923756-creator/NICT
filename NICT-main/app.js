@@ -30,7 +30,19 @@
    - match data
    ============================================================ */
 
-const DATA={}; let view="home", currentPlayer="", liveTimer=null, rankingFormat="T20", recordFormat="T20";
+const DATA={
+  players_format:[],
+  career_records:[],
+  ratings:[],
+  batting_rankings:[],
+  bowling_rankings:[],
+  catches:[],
+  teams:[],
+  squads:[],
+  opponent_records:[],
+  live_matches:[]
+};
+let view="home", currentPlayer="", liveTimer=null, rankingFormat="T20", recordFormat="T20";
 const BALL_DELAY_SECONDS=20, OVER_BREAK_SECONDS=60, INNINGS_BREAK_SECONDS=900, TOSS_BREAK_SECONDS=900;
 const app=document.getElementById("app");
 const CLOUD_API="/api/matches";
@@ -126,12 +138,42 @@ function table(h,rows){return `<div class="table-wrap"><table class="table"><the
 function player(name){currentPlayer=name;view="player";render()}
 function playerLink(name){return `<a href="#" onclick="player('${esc(name)}');return false">${esc(name)}</a>`}
 
+function safeLocalJSON(key,fallback){
+  try{
+    const raw=localStorage.getItem(key);
+    if(!raw)return fallback;
+    const parsed=JSON.parse(raw);
+    return parsed??fallback;
+  }catch(e){
+    console.warn(`Ignoring invalid localStorage value for ${key}:`,e);
+    try{localStorage.removeItem(key)}catch(_){}
+    return fallback;
+  }
+}
+
 async function loadData(){
  const names=["players_format","career_records","ratings","batting_rankings","bowling_rankings","catches","teams","squads","opponent_records","live_matches"];
- for(const n of names){try{DATA[n]=await fetch(`data/${n}.json`,{cache:"no-store"}).then(r=>r.json())}catch(e){DATA[n]=[]}}
- const local=JSON.parse(localStorage.getItem("nict_uploaded_matches")||"[]");
+ for(const n of names){try{
+   const r=await fetch(`data/${n}.json`,{cache:"no-store"});
+   if(!r.ok)throw new Error(`${n}.json HTTP ${r.status}`);
+   const value=await r.json();
+   DATA[n]=Array.isArray(value)?value:[];
+ }catch(e){
+   console.warn(`Could not load data/${n}.json:`,e);
+   DATA[n]=[];
+ }}
+
+ const local=safeLocalJSON("nict_uploaded_matches",[]);
  DATA.live_matches=Array.isArray(local)?local:[];
- try{const cloud=await cloudMatches();if(Array.isArray(cloud)){DATA.live_matches=cloud;localStorage.setItem("nict_uploaded_matches",JSON.stringify(cloud));}}catch(e){console.warn("Cloud initial load failed",e)}
+
+ try{
+   const cloud=await cloudMatches();
+   if(Array.isArray(cloud)&&cloud.length){
+     DATA.live_matches=cloud;
+     try{localStorage.setItem("nict_uploaded_matches",JSON.stringify(cloud))}catch(_){}
+   }
+ }catch(e){console.warn("Cloud initial load failed",e)}
+
  await refreshSharedStats();
  selectSharedMatchFromURL();
  startCloudPolling();
@@ -1092,7 +1134,8 @@ function pointTableData(format){
   const completed=(DATA.live_matches||[]).filter(m=>
     m &&
     String(m.status||"").toLowerCase()==="completed" &&
-    careerFormat(m.format)===format
+    careerFormat(m.format)===format &&
+    Array.isArray(m.deliveries) && m.deliveries.length>0
   );
 
   for(const m of completed){
@@ -1495,7 +1538,7 @@ async function deleteUploaded(i){
 
 async function bootNICA(){
   try{
-    /* Show a usable home shell immediately. */
+    /* DATA starts with safe empty arrays, so the navigation/home shell can render immediately. */
     render();
     await loadData();
   }catch(error){
