@@ -36,10 +36,11 @@
         - Players
         - Rankings
         - Records
+        - Points Table 2026
         - Statistics
         - Head to Head
         - Career records
-        - Admin
+        - Admin controls
         - Supabase multi-device support
         - 20 sec ball replay
         - 60 sec over break
@@ -217,6 +218,13 @@
 
         <button
             type="button"
+            data-view="pointTable"
+        >
+            Points Table
+        </button>
+
+        <button
+            type="button"
             data-view="records"
         >
             Records
@@ -327,17 +335,7 @@
     >
         ⭐ All-round Rankings
     </button>
-
-
-    <!-- Team / fielding records -->
-    <button
-        type="button"
-        data-view="teamRecords"
-    >
-        🏫 Team Records
-    </button>
-
-    <button
+<button
         type="button"
         data-view="catchRecords"
     >
