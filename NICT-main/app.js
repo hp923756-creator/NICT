@@ -66,11 +66,44 @@ function esc(x){return String(x??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&l
 function st(x){return TEAM_MAP[String(x||"").trim()]||String(x||"").trim()}
 function fmt(x){return Number(x||0).toLocaleString("en-IN")}
 function logo(t,cls="team-logo"){return `<img class="${cls}" src="${LOGOS[st(t)]||""}" alt="${esc(st(t))}">`}
-function navigate(v){view=v;closeMenu();render();scrollTo(0,0)}
-function closeMenu(){document.getElementById("drawer").classList.remove("open");document.getElementById("overlay").classList.remove("show")}
-document.querySelectorAll("[data-view]").forEach(b=>b.addEventListener("click",()=>navigate(b.dataset.view)));
-document.getElementById("menuBtn").onclick=()=>{document.getElementById("drawer").classList.add("open");document.getElementById("overlay").classList.add("show")};
-document.getElementById("closeMenu").onclick=closeMenu;document.getElementById("overlay").onclick=closeMenu;
+function navigate(v){
+  view=v;
+  closeMenu();
+  render();
+  try{window.scrollTo(0,0)}catch(e){}
+}
+function closeMenu(){
+  const drawer=document.getElementById("drawer");
+  const overlay=document.getElementById("overlay");
+  if(drawer)drawer.classList.remove("open");
+  if(overlay)overlay.classList.remove("show");
+  const menuBtn=document.getElementById("menuBtn");
+  if(menuBtn)menuBtn.setAttribute("aria-expanded","false");
+}
+function initNavigation(){
+  document.querySelectorAll("[data-view]").forEach(b=>{
+    b.addEventListener("click",()=>navigate(b.dataset.view));
+  });
+  const menuBtn=document.getElementById("menuBtn");
+  const drawer=document.getElementById("drawer");
+  const closeBtn=document.getElementById("closeMenu");
+  const overlay=document.getElementById("overlay");
+
+  if(menuBtn&&drawer){
+    menuBtn.addEventListener("click",()=>{
+      drawer.classList.add("open");
+      if(overlay)overlay.classList.add("show");
+      menuBtn.setAttribute("aria-expanded","true");
+    });
+  }
+  if(closeBtn)closeBtn.addEventListener("click",closeMenu);
+  if(overlay)overlay.addEventListener("click",closeMenu);
+}
+if(document.readyState==="loading"){
+  document.addEventListener("DOMContentLoaded",initNavigation,{once:true});
+}else{
+  initNavigation();
+}
 
 function head(title,sub=""){return `<div class="page-head"><div><h1>${esc(title)}</h1>${sub?`<div class="muted">${esc(sub)}</div>`:""}</div></div>`}
 function table(h,rows){return `<div class="table-wrap"><table class="table"><thead><tr>${h.map(x=>`<th>${x}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody></table></div>`}
@@ -1613,7 +1646,28 @@ async function deleteUploaded(i){
   }catch(e){alert("Delete failed: "+e.message)}
 }
 
-loadData();
+async function bootNICA(){
+  try{
+    await loadData();
+  }catch(error){
+    console.error("NICA startup error:",error);
+    if(app){
+      app.innerHTML=head(
+        "NICA Cricket Association",
+        "Application startup error"
+      )+
+      `<div class="card empty">
+        Unable to load the application data. Please refresh the page.
+      </div>`;
+    }
+  }
+}
+
+if(document.readyState==="loading"){
+  document.addEventListener("DOMContentLoaded",bootNICA,{once:true});
+}else{
+  bootNICA();
+}
 
 
 
