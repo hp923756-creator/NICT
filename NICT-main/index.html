@@ -14,21 +14,13 @@
     <meta name="theme-color" content="#079b79">
 
     <!--
-      ==========================================================
-      NICT FINAL FRONTEND STRUCTURE
-      ==========================================================
-
-      ZIP currently contains TWO app.js files:
-
-        NICT-main/app.js
-        NICT-main/NICT-main/app.js
-
-      IMPORTANT:
-        This index intentionally loads the SECOND one:
-
-          NICT-main/NICT-main/app.js
-
-      because that is the full application containing:
+      NICA FINAL FRONTEND
+      This index.html and app.js belong in the same directory.
+      The script below intentionally loads the local app.js.
+      All shared match state is read from /api/matches.
+    -->
+    <!--
+      Full application containing:
         - Home
         - Live
         - Matches
@@ -339,6 +331,13 @@
 
     <button
         type="button"
+        data-view="pointTable"
+    >
+        📋 Points Table 2026
+    </button>
+
+    <button
+        type="button"
         data-view="catchRecords"
     >
         🧤 Catch Records
@@ -410,56 +409,13 @@
 
 <!-- ==========================================================
      APPLICATION ROOT
-
-     The full nested app.js renders everything inside #app.
      ========================================================== -->
 
 <main id="app">
-
-    <div class="card empty">
-        Loading NICA Cricket Association...
-    </div>
-
+    <div class="card empty">Loading NICA Cricket Association...</div>
 </main>
 
-
-<!-- ==========================================================
-     FOOTER
-     ========================================================== -->
-
-<footer
-    style="
-        text-align:center;
-        padding:20px;
-        color:#667085;
-        font-size:12px;
-    "
->
-    NICA — Noida Intercollege Cricket Association
-    <br>
-    Live Cricket · Players · Rankings · Records
-</footer>
-
-
-<!-- ==========================================================
-     FINAL SCRIPT
-
-     VERY IMPORTANT:
-     DO NOT CHANGE THIS TO "app.js".
-
-     It must load the FULL application:
-
-         NICT-main/NICT-main/app.js
-
-     Because this index.html is located in:
-
-         NICT-main/index.html
-     ========================================================== -->
-
-<script
-    src="app.js"
-    defer
-></script>
+<script src="app.js" defer></script>
 
 </body>
 </html>
