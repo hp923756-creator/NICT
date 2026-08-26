@@ -31,16 +31,9 @@
    ============================================================ */
 
 const DATA={
-  players_format:[],
-  career_records:[],
-  ratings:[],
-  batting_rankings:[],
-  bowling_rankings:[],
-  catches:[],
-  teams:[],
-  squads:[],
-  opponent_records:[],
-  live_matches:[]
+  players_format:[], career_records:[], ratings:[], batting_rankings:[],
+  bowling_rankings:[], catches:[], teams:[], squads:{},
+  opponent_records:[], live_matches:[], team_records:[]
 };
 let view="home", currentPlayer="", liveTimer=null, rankingFormat="T20", recordFormat="T20";
 const BALL_DELAY_SECONDS=20, OVER_BREAK_SECONDS=60, INNINGS_BREAK_SECONDS=900, TOSS_BREAK_SECONDS=900;
@@ -138,42 +131,25 @@ function table(h,rows){return `<div class="table-wrap"><table class="table"><the
 function player(name){currentPlayer=name;view="player";render()}
 function playerLink(name){return `<a href="#" onclick="player('${esc(name)}');return false">${esc(name)}</a>`}
 
-function safeLocalJSON(key,fallback){
-  try{
-    const raw=localStorage.getItem(key);
-    if(!raw)return fallback;
-    const parsed=JSON.parse(raw);
-    return parsed??fallback;
-  }catch(e){
-    console.warn(`Ignoring invalid localStorage value for ${key}:`,e);
-    try{localStorage.removeItem(key)}catch(_){}
-    return fallback;
-  }
-}
-
 async function loadData(){
  const names=["players_format","career_records","ratings","batting_rankings","bowling_rankings","catches","teams","squads","opponent_records","live_matches"];
- for(const n of names){try{
-   const r=await fetch(`data/${n}.json`,{cache:"no-store"});
-   if(!r.ok)throw new Error(`${n}.json HTTP ${r.status}`);
-   const value=await r.json();
-   DATA[n]=Array.isArray(value)?value:[];
+ for(const n of names){try{DATA[n]=await fetch(`data/${n}.json`,{cache:"no-store"}).then(r=>r.json())}catch(e){DATA[n]=[]}}
+ let local=[];
+ try{
+   const raw=localStorage.getItem("nict_uploaded_matches");
+   const parsed=raw?JSON.parse(raw):[];
+   local=Array.isArray(parsed)?parsed:[];
  }catch(e){
-   console.warn(`Could not load data/${n}.json:`,e);
-   DATA[n]=[];
- }}
-
- const local=safeLocalJSON("nict_uploaded_matches",[]);
- DATA.live_matches=Array.isArray(local)?local:[];
-
+   console.warn("Saved match cache was invalid; using empty cache.",e);
+ }
+ DATA.live_matches=local;
  try{
    const cloud=await cloudMatches();
-   if(Array.isArray(cloud)&&cloud.length){
+   if(Array.isArray(cloud) && cloud.length){
      DATA.live_matches=cloud;
-     try{localStorage.setItem("nict_uploaded_matches",JSON.stringify(cloud))}catch(_){}
+     localStorage.setItem("nict_uploaded_matches",JSON.stringify(cloud));
    }
  }catch(e){console.warn("Cloud initial load failed",e)}
-
  await refreshSharedStats();
  selectSharedMatchFromURL();
  startCloudPolling();
@@ -278,7 +254,18 @@ function getActiveMatch(){
 }
 
 function live(){
- const m=getActiveMatch(); if(!m){app.innerHTML=head("Live Scores")+"<div class='card empty'>No match loaded.</div>";return}
+ const m=getActiveMatch();
+ if(!m){
+   const matches=Array.isArray(DATA.live_matches)?DATA.live_matches:[];
+   const cards=matches.map((x,i)=>`<div class="card">
+     <h3>${esc(st(x.team_a))} vs ${esc(st(x.team_b))}</h3>
+     <div class="muted">${esc(x.format||"Match")} · ${esc(x.match_id||x.id||"")}</div>
+     <div style="margin-top:12px"><button class="btn" onclick="startLive(${i})">Open Live Scorecard</button></div>
+   </div>`).join("");
+   app.innerHTML=head("Live Scores","Select a match to open its live scorecard")+
+     (cards||`<div class="card empty">No match is available yet. Upload a match from Admin.</div>`);
+   return;
+ }
  if(!liveTimer)liveTimer=setInterval(()=>{if(view==="live"){const active=getActiveMatch();if(active)renderLive(active)}},1000);
  renderLive(m);
 }
@@ -1134,8 +1121,7 @@ function pointTableData(format){
   const completed=(DATA.live_matches||[]).filter(m=>
     m &&
     String(m.status||"").toLowerCase()==="completed" &&
-    careerFormat(m.format)===format &&
-    Array.isArray(m.deliveries) && m.deliveries.length>0
+    careerFormat(m.format)===format
   );
 
   for(const m of completed){
@@ -1538,8 +1524,7 @@ async function deleteUploaded(i){
 
 async function bootNICA(){
   try{
-    /* DATA starts with safe empty arrays, so the navigation/home shell can render immediately. */
-    render();
+    // IMPORTANT: loadData initializes DATA before any view renders.
     await loadData();
   }catch(error){
     console.error("NICA startup error:",error);
