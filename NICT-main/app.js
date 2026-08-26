@@ -67,7 +67,7 @@ function st(x){return TEAM_MAP[String(x||"").trim()]||String(x||"").trim()}
 function fmt(x){return Number(x||0).toLocaleString("en-IN")}
 function logo(t,cls="team-logo"){return `<img class="${cls}" src="${LOGOS[st(t)]||""}" alt="${esc(st(t))}">`}
 function navigate(v){
-  view=v;
+  view=String(v||"home");
   closeMenu();
   render();
   try{window.scrollTo(0,0)}catch(e){}
@@ -75,35 +75,51 @@ function navigate(v){
 function closeMenu(){
   const drawer=document.getElementById("drawer");
   const overlay=document.getElementById("overlay");
+  const menuBtn=document.getElementById("menuBtn");
   if(drawer)drawer.classList.remove("open");
   if(overlay)overlay.classList.remove("show");
-  const menuBtn=document.getElementById("menuBtn");
   if(menuBtn)menuBtn.setAttribute("aria-expanded","false");
 }
-function initNavigation(){
-  document.querySelectorAll("[data-view]").forEach(b=>{
-    b.addEventListener("click",()=>navigate(b.dataset.view));
-  });
-  const menuBtn=document.getElementById("menuBtn");
+function openMenu(){
   const drawer=document.getElementById("drawer");
-  const closeBtn=document.getElementById("closeMenu");
   const overlay=document.getElementById("overlay");
+  const menuBtn=document.getElementById("menuBtn");
+  if(drawer)drawer.classList.add("open");
+  if(overlay)overlay.classList.add("show");
+  if(menuBtn)menuBtn.setAttribute("aria-expanded","true");
+}
+function initNavigation(){
+  if(window.__nicaNavigationBound)return;
+  window.__nicaNavigationBound=true;
 
-  if(menuBtn&&drawer){
-    menuBtn.addEventListener("click",()=>{
-      drawer.classList.add("open");
-      if(overlay)overlay.classList.add("show");
-      menuBtn.setAttribute("aria-expanded","true");
-    });
-  }
-  if(closeBtn)closeBtn.addEventListener("click",closeMenu);
-  if(overlay)overlay.addEventListener("click",closeMenu);
+  document.addEventListener("click",function(e){
+    const viewButton=e.target.closest("[data-view]");
+    if(viewButton){
+      e.preventDefault();
+      navigate(viewButton.dataset.view);
+      return;
+    }
+
+    const menuButton=e.target.closest("#menuBtn");
+    if(menuButton){
+      e.preventDefault();
+      openMenu();
+      return;
+    }
+
+    const closeButton=e.target.closest("#closeMenu");
+    if(closeButton){
+      e.preventDefault();
+      closeMenu();
+      return;
+    }
+
+    if(e.target.closest("#overlay")){
+      closeMenu();
+    }
+  });
 }
-if(document.readyState==="loading"){
-  document.addEventListener("DOMContentLoaded",initNavigation,{once:true});
-}else{
-  initNavigation();
-}
+initNavigation();
 
 function head(title,sub=""){return `<div class="page-head"><div><h1>${esc(title)}</h1>${sub?`<div class="muted">${esc(sub)}</div>`:""}</div></div>`}
 function table(h,rows){return `<div class="table-wrap"><table class="table"><thead><tr>${h.map(x=>`<th>${x}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody></table></div>`}
@@ -1149,30 +1165,43 @@ function pointTableSection(format){
 function teamRecords(){
   const baseTeams=Array.isArray(DATA.teams)?DATA.teams:[];
   const teams=["GCET","GLB","ABES","JSS","KCC"];
-  const completed=(DATA.live_matches||[]).filter(m=>
-    String(m?.status||"").toLowerCase()==="completed" &&
-    m?.team_records_enabled!==false
-  );
 
   const rows=teams.map(team=>{
-    const base=baseTeams.find(x=>st(x.short_team||x.team)===team)||{};
+    const base=baseTeams.find(
+      x=>st(x.short_team||x.team)===team
+    )||{};
+
     let matches=Number(base.matches||0);
     let wins=Number(base.wins||0);
     let losses=Number(base.losses||0);
     let nr=Number(base.no_results||base.nr||0);
     let ties=Number(base.ties||0);
+
     const seen=new Set();
 
-    for(const m of completed){
-      const id=String(m.match_id||m.id||m.file_name||"");
+    for(const m of (DATA.live_matches||[])){
+      const status=String(m?.status||"").toLowerCase();
+
+      /* A match affects Team Records only after Admin marks it completed.
+         Result/winner alone is deliberately NOT enough for live/upcoming JSON. */
+      if(status!=="completed")continue;
+      if(m?.team_records_enabled===false)continue;
+
+      const id=String(
+        m?.match_id||m?.id||m?.file_name||""
+      ).trim();
+
       if(!id||seen.has(id))continue;
       seen.add(id);
 
-      const a=st(m.team_a),b=st(m.team_b);
+      const a=st(m?.team_a);
+      const b=st(m?.team_b);
       if(team!==a&&team!==b)continue;
 
       const result=deriveCompletedMatchResult(m);
+
       matches++;
+
       if(result.type==="WIN"){
         if(result.winner===team)wins++;
         else losses++;
@@ -1184,7 +1213,9 @@ function teamRecords(){
     }
 
     const decided=Math.max(0,matches-nr);
-    const winPct=decided?((wins/decided)*100).toFixed(1):"0.0";
+    const winPercentage=decided
+      ?((wins/decided)*100).toFixed(1)
+      :"0.0";
 
     return `<tr>
       <td><b>${esc(team)}</b></td>
@@ -1193,13 +1224,13 @@ function teamRecords(){
       <td>${losses}</td>
       <td>${ties}</td>
       <td>${nr}</td>
-      <td>${winPct}%</td>
+      <td><b>${winPercentage}%</b></td>
     </tr>`;
   }).join("");
 
   app.innerHTML=head(
     "Team Records",
-    "Historical team records plus every newly completed match. Updated automatically after match completion."
+    "Historical records + Admin-completed matches. Records update after each completed match."
   )+
   table(
     ["Team","Matches","Wins","Losses","Ties","No Results","Win %"],
@@ -1207,15 +1238,6 @@ function teamRecords(){
   );
 }
 
-function pointTable(){
-  app.innerHTML=head(
-    "Points Table 2026",
-    "Only Admin-approved completed matches are included · Win 2 · Tie/No Result 1 · Loss 0"
-  )+
-  pointTableSection("T20")+
-  pointTableSection("ODI")+
-  pointTableSection("Test");
-}
 
 function records(){app.innerHTML=head("Records","Choose an individual or team record category")+`<div class="grid">${[["Career Records","careerRecords"],["Most Centuries","centuryRecords"],["Most 50+ Scores","fiftyRecords"],["Most Sixes","sixRecords"],["Most Fours","fourRecords"],["Most Wickets","wicketRecords"],["Most Catches","catchRecords"],["Points Table 2026","pointTable"]].map(x=>`<div class="card"><h3>${x[0]}</h3><button class="btn" onclick="navigate('${x[1]}')">Open</button></div>`).join("")}</div>`}
 function headToHead(){const ts=Object.keys(DATA.squads||{});app.innerHTML=head("Head to Head","Opponent records from the supplied starting dataset")+`<div class="tabs">${ts.map(t=>`<button onclick="h2h('${t}')">${t}</button>`).join("")}</div><div id="h2h" class="card empty">Select a team.</div>`}
@@ -1648,6 +1670,8 @@ async function deleteUploaded(i){
 
 async function bootNICA(){
   try{
+    /* Show a usable home shell immediately. */
+    render();
     await loadData();
   }catch(error){
     console.error("NICA startup error:",error);
@@ -1657,7 +1681,9 @@ async function bootNICA(){
         "Application startup error"
       )+
       `<div class="card empty">
-        Unable to load the application data. Please refresh the page.
+        Unable to load application data.
+        <br>
+        <button class="btn" onclick="location.reload()">Reload</button>
       </div>`;
     }
   }
@@ -1668,6 +1694,5 @@ if(document.readyState==="loading"){
 }else{
   bootNICA();
 }
-
 
 
