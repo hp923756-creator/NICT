@@ -1,4 +1,4 @@
-* ============================================================
+/* ============================================================
    NICA FINAL APP.JS — BRANDING AND LOGO UPDATE
    ============================================================
 
@@ -134,7 +134,7 @@ function render(){
  if(view==="records")return records(); if(view==="careerRecords")return careerRecords(); if(view==="centuryRecords")return leader("hundreds","Most Centuries");
  if(view==="fiftyRecords")return leader("fifty_plus","Most 50+ Scores"); if(view==="sixRecords")return leader("sixes","Most Sixes");
  if(view==="fourRecords")return leader("fours","Most Fours"); if(view==="wicketRecords")return leader("wickets","Most Wickets");
- if(view==="catchRecords")return catchesPage(); if(view==="teamRecords")return teamRecords(); if(view==="headToHead")return headToHead();
+ if(view==="catchRecords")return catchesPage(); if(view==="pointTable"||view==="teamRecords")return pointTable(); if(view==="headToHead")return headToHead();
  if(view==="stats")return stats(); if(view==="admin")return admin();
 }
 
@@ -232,7 +232,7 @@ function renderLive(raw){
  const matchEvent=replayState.event;
  app.innerHTML=head(`${a} vs ${b}`,`${m.format||"Match"} · ${m.match_id||""}`)+
  `<div class="notice"><b>Toss:</b> ${esc(tossSummary(m))}</div><div class="notice ${matchEvent?.type==='draw'?'live-pill':''}">${matchEvent?esc(eventLabel(matchEvent)):`${esc(state.status)}`}</div>`+
- `<div class="scorehero"><div class="scoretop"><div><div class="meta">LIVE · INNINGS ${currentInnings}</div><h2>${esc(currentBatting)}</h2><div class="score">${state.runs}/${state.wickets} <span class="meta">(${state.overs})</span></div><div class="meta">${state.crr} CRR · ${state.status}</div></div><div class="team-logos">${logo(a)}<b>vs</b>${logo(b)}</div></div>
+ `<div class="scorehero"><div class="scoretop"><div><div class="meta">${String(m.status||"live").toUpperCase()} · INNINGS ${currentInnings}</div><h2>${esc(currentBatting)}</h2><div class="score">${state.runs}/${state.wickets} <span class="meta">(${state.overs})</span></div><div class="meta">${state.crr} CRR · ${state.status}</div></div><div class="team-logos">${logo(a)}<b>vs</b>${logo(b)}</div></div>
  <div style="margin-top:15px"><b>🏏 ${esc(state.striker?.name||"—")} ${state.striker?state.striker.runs+"* ("+state.striker.balls+")":""}</b> · ${esc(state.nonStriker?.name||"—")} ${state.nonStriker?state.nonStriker.runs+" ("+state.nonStriker.balls+")":""}</div></div>
  <div class="section grid"><div class="card"><h3>Partnership</h3><div class="big">${state.partnership.runs}</div><span class="muted">${state.partnership.balls} balls</span></div><div class="card"><h3>Bowler</h3><div>${esc(state.bowler.name||"—")}</div><span class="muted">${state.bowler.overs} · ${state.bowler.runs}-${state.bowler.wickets}</span></div><div class="card"><h3>Venue</h3><div>${esc(m.venue||"—")}</div></div><div class="card"><h3>Umpires</h3><div>${esc([m.umpire_1,m.umpire_2].filter(Boolean).join(" · ")||"—")}</div></div></div>
  <div class="section"><h2>Last balls</h2><div class="lastballs">${last||"<span class='muted'>Waiting for first delivery...</span>"}</div></div>
@@ -528,8 +528,91 @@ function careerRecords(){
  };
 }
 function catchesPage(){app.innerHTML=head("Most Catches","Fielding leaderboard");app.innerHTML+=table(["Rank","Player","Team","Catches","Stumpings","Run-outs"],DATA.catches.map(x=>`<tr><td>${x.catch_rank}</td><td>${playerLink(x.player)}</td><td>${x.short_team}</td><td>${x.total_catches}</td><td>${x.total_stumpings}</td><td>${x.total_runouts}</td></tr>`))}
-function teamRecords(){app.innerHTML=head("Team Records","Tournament results by team");app.innerHTML+=table(["Team","Matches","Wins","Losses","NR","Win %"],DATA.teams.map(x=>`<tr><td>${x.short_team}</td><td>${x.matches}</td><td>${x.wins}</td><td>${x.losses}</td><td>${x.no_results}</td><td>${x.win_percentage}%</td></tr>`))}
-function records(){app.innerHTML=head("Records","Choose an individual or team record category")+`<div class="grid">${[["Career Records","careerRecords"],["Most Centuries","centuryRecords"],["Most 50+ Scores","fiftyRecords"],["Most Sixes","sixRecords"],["Most Fours","fourRecords"],["Most Wickets","wicketRecords"],["Most Catches","catchRecords"],["Team Records","teamRecords"]].map(x=>`<div class="card"><h3>${x[0]}</h3><button class="btn" onclick="navigate('${x[1]}')">Open</button></div>`).join("")}</div>`}
+function pointTableData(format){
+  const table=Object.fromEntries(
+    ["GCET","GLB","ABES","JSS","KCC"].map(team=>[
+      team,{team,played:0,wins:0,losses:0,ties:0,nr:0,points:0}
+    ])
+  );
+
+  const completed=(DATA.live_matches||[]).filter(m=>
+    m &&
+    String(m.status||"").toLowerCase()==="completed" &&
+    careerFormat(m.format)===format &&
+    m.points_table_enabled===true
+  );
+
+  for(const m of completed){
+    const a=st(m.team_a),b=st(m.team_b);
+    if(!table[a]||!table[b])continue;
+
+    const result=deriveCompletedMatchResult(m);
+
+    table[a].played++;
+    table[b].played++;
+
+    if(result.type==="WIN" && (result.winner===a||result.winner===b)){
+      const loser=result.winner===a?b:a;
+      table[result.winner].wins++;
+      table[result.winner].points+=2;
+      table[loser].losses++;
+    }else if(result.type==="TIE"){
+      table[a].ties++;
+      table[b].ties++;
+      table[a].points++;
+      table[b].points++;
+    }else{
+      table[a].nr++;
+      table[b].nr++;
+      table[a].points++;
+      table[b].points++;
+    }
+  }
+
+  return Object.values(table).sort(
+    (x,y)=>
+      y.points-x.points ||
+      y.wins-x.wins ||
+      y.ties-x.ties ||
+      y.played-x.played ||
+      x.team.localeCompare(y.team)
+  );
+}
+
+function pointTableSection(format){
+  const rows=pointTableData(format).map((x,i)=>`<tr>
+    <td><b>${i+1}</b></td>
+    <td><b>${esc(x.team)}</b></td>
+    <td>${x.played}</td>
+    <td>${x.wins}</td>
+    <td>${x.losses}</td>
+    <td>${x.ties}</td>
+    <td>${x.nr}</td>
+    <td><b>${x.points}</b></td>
+    <td>${x.played?((x.wins/x.played)*100).toFixed(2):"0.00"}%</td>
+  </tr>`).join("");
+
+  return `<div class="section">
+    <h2>${format} Points Table 2026</h2>
+    ${table(["Pos","Team","P","W","L","T","NR","Pts","Win %"],rows)}
+  </div>`;
+}
+
+function teamRecords(){
+  pointTable();
+}
+
+function pointTable(){
+  app.innerHTML=head(
+    "Points Table 2026",
+    "Only Admin-approved completed matches are included · Win 2 · Tie/No Result 1 · Loss 0"
+  )+
+  pointTableSection("T20")+
+  pointTableSection("ODI")+
+  pointTableSection("Test");
+}
+
+function records(){app.innerHTML=head("Records","Choose an individual or team record category")+`<div class="grid">${[["Career Records","careerRecords"],["Most Centuries","centuryRecords"],["Most 50+ Scores","fiftyRecords"],["Most Sixes","sixRecords"],["Most Fours","fourRecords"],["Most Wickets","wicketRecords"],["Most Catches","catchRecords"],["Points Table 2026","pointTable"]].map(x=>`<div class="card"><h3>${x[0]}</h3><button class="btn" onclick="navigate('${x[1]}')">Open</button></div>`).join("")}</div>`}
 function headToHead(){const ts=Object.keys(DATA.squads||{});app.innerHTML=head("Head to Head","Opponent records from the supplied starting dataset")+`<div class="tabs">${ts.map(t=>`<button onclick="h2h('${t}')">${t}</button>`).join("")}</div><div id="h2h" class="card empty">Select a team.</div>`}
 function h2h(t){const rows=DATA.opponent_records.filter(x=>x.short_team===t||x.team===t).slice(0,50);document.getElementById("h2h").innerHTML=rows.length?table(Object.keys(rows[0]).slice(0,9),rows.map(x=>`<tr>${Object.values(x).slice(0,9).map(v=>`<td>${esc(v)}</td>`).join("")}</tr>`)):"No records found."}
 function stats(){app.innerHTML=head("Stats Explorer","Use the menu to move between format rankings, career records and opponent records")+`<div class="grid"><div class="card"><h3>Batting</h3><p>Runs · average · SR · 100s · 50+ · 4s · 6s</p><button class="btn" onclick="navigate('batRankings')">Open</button></div><div class="card"><h3>Bowling</h3><p>Overs · economy · wickets · bowling rating</p><button class="btn" onclick="navigate('bowlRankings')">Open</button></div><div class="card"><h3>Fielding</h3><p>Catches · stumpings · run-outs</p><button class="btn" onclick="navigate('catchRecords')">Open</button></div><div class="card"><h3>Player Career</h3><p>Separate Test, ODI and T20 records.</p><button class="btn" onclick="navigate('careerRecords')">Open</button></div></div>`}
@@ -736,7 +819,7 @@ function adminPanel(){
  `<div class="notice">Upload format: JSON with <b>deliveries</b>. Team names are normalized automatically. A filename such as <b>GCET_vs_GLB.json</b> is also understood. Uploaded matches are stored in this browser.</div>
  <div class="section upload-box"><h2>Upload Match JSON</h2><input class="input file" id="jsonFile" type="file" accept=".json,application/json"><button class="btn" onclick="uploadJSON()">Upload Match</button><p id="uploadMsg" class="muted"></p></div>
  <div class="section"><h2>Available Matches</h2><div id="adminMatches"></div></div>
- <div class="section"><button class="btn secondary" onclick="rebuildCareerFromCompletedMatches()">Update Career From Completed Matches</button> <button class="btn secondary" onclick="sessionStorage.removeItem('nict_admin');admin()">Lock Admin</button></div>`;
+ <div class="section"><button class="btn secondary" onclick="sessionStorage.removeItem('nict_admin');sessionStorage.removeItem('nict_admin_password');admin()">Lock Admin</button></div>`;
  renderAdminMatches();
 }
 
@@ -756,11 +839,155 @@ async function rebuildCareerFromCompletedMatches(){
 }
 
 function renderAdminMatches(){
- const box=document.getElementById("adminMatches");if(!box)return;
- const local=JSON.parse(localStorage.getItem("nict_uploaded_matches")||"[]");
- const rows=local.map((m,i)=>`<div class="match-card"><b>${esc(st(m.team_a))} vs ${esc(st(m.team_b))}</b><div class="muted">${esc(m.format||"")} · ${esc(m.match_id||"")}</div><div class="event-controls"><label>Event after <select id="eventBall${i}" class="input">${eventBallOptions(m)}</select></label><button class="btn" onclick="addMatchEvent(${i},'tea')">Tea break</button><button class="btn" onclick="addMatchEvent(${i},'drinks')">Drinks break</button><button class="btn" onclick="addMatchEvent(${i},'rain')">Rain suspension</button><button class="btn" onclick="addMatchEvent(${i},'draw')">Draw</button><button class="btn secondary" onclick="resumeRain(${i})">Resume rain</button></div><div style="margin-top:8px"><button class="btn" onclick="useUploaded(${i})">Use Live</button> <button class="btn danger" onclick="deleteUploaded(${i})">Delete</button></div></div>`).join("");
- box.innerHTML=rows||`<div class="empty">No browser-uploaded matches yet.</div>`;
+  const box=document.getElementById("adminMatches");
+  if(!box)return;
+
+  const local=Array.isArray(DATA.live_matches)?DATA.live_matches:[];
+
+  const rows=local.map((m,i)=>{
+    const status=String(m.status||"upcoming").toLowerCase();
+    const completed=status==="completed";
+
+    return `<div class="match-card">
+      <b>${esc(st(m.team_a))} vs ${esc(st(m.team_b))}</b>
+      <div class="muted">${esc(m.format||"")} · ${esc(m.match_id||"")}</div>
+
+      <div class="notice">
+        Status: <b>${esc(status.toUpperCase())}</b>
+        ${completed&&m.result?` · ${esc(m.result)}`:""}
+      </div>
+
+      <div class="record-options">
+        <label>
+          <input type="checkbox" id="pts_${i}" ${m.points_table_enabled===true?"checked":""}>
+          Include in Points Table 2026
+        </label>
+
+        <label>
+          <input type="checkbox" id="player_${i}" ${m.player_records_enabled===true?"checked":""}>
+          Update Player Records
+        </label>
+
+        <label>
+          <input type="checkbox" id="rank_${i}" ${m.rankings_enabled===true?"checked":""}>
+          Update Rankings
+        </label>
+      </div>
+
+      <div class="event-controls">
+        <label>Event after
+          <select id="eventBall${i}" class="input">${eventBallOptions(m)}</select>
+        </label>
+        <button class="btn" onclick="addMatchEvent(${i},'tea')">Tea break</button>
+        <button class="btn" onclick="addMatchEvent(${i},'drinks')">Drinks break</button>
+        <button class="btn" onclick="addMatchEvent(${i},'rain')">Rain suspension</button>
+        <button class="btn" onclick="addMatchEvent(${i},'draw')">Draw</button>
+        <button class="btn secondary" onclick="resumeRain(${i})">Resume rain</button>
+      </div>
+
+      <div style="margin-top:8px">
+        <button class="btn secondary" onclick="saveMatchRecordOptions(${i})">
+          Save Record Settings
+        </button>
+        <button class="btn" onclick="useUploaded(${i})" ${completed?"disabled":""}>
+          Start Match
+        </button>
+        <button class="btn secondary" onclick="completeMatchNow(${i})" ${completed?"disabled":""}>
+          Complete Match
+        </button>
+        <button class="btn danger" onclick="deleteUploaded(${i})">
+          Delete
+        </button>
+      </div>
+    </div>`;
+  }).join("");
+
+  box.innerHTML=rows||`<div class="empty">No matches available.</div>`;
 }
+
+async function saveMatchRecordOptions(index){
+  const m=DATA.live_matches?.[index];
+  if(!m)return;
+
+  if(sessionStorage.getItem("nict_admin")!=="true"){
+    alert("Admin authentication required.");
+    return;
+  }
+
+  const updated={
+    ...m,
+    points_table_enabled:document.getElementById(`pts_${index}`)?.checked===true,
+    player_records_enabled:document.getElementById(`player_${index}`)?.checked===true,
+    rankings_enabled:document.getElementById(`rank_${index}`)?.checked===true
+  };
+
+  try{
+    await adminCloud("POST",updated,m.match_id);
+    DATA.live_matches=await cloudMatches();
+    localStorage.setItem("nict_uploaded_matches",JSON.stringify(DATA.live_matches||[]));
+    renderAdminMatches();
+    alert("Record settings saved for this match.");
+  }catch(e){
+    alert("Could not save record settings: "+e.message);
+  }
+}
+
+async function completeMatchNow(index){
+  const m=DATA.live_matches?.[index];
+  if(!m)return;
+
+  if(sessionStorage.getItem("nict_admin")!=="true"){
+    alert("Admin authentication required.");
+    return;
+  }
+
+  if(String(m.status||"").toLowerCase()==="completed"){
+    alert("This match is already completed.");
+    return;
+  }
+
+  if(!confirm(
+    `Complete ${st(m.team_a)} vs ${st(m.team_b)}?\n\nOnly the selected record settings will be updated.`
+  ))return;
+
+  const result=deriveCompletedMatchResult(m);
+
+  const updated={
+    ...m,
+    status:"completed",
+    winner:result.winner||"",
+    result:result.type==="WIN"
+      ? `${result.winner} won`
+      : result.type==="TIE"
+        ? "Match tied"
+        : "No result",
+    completed_at:new Date().toISOString()
+  };
+
+  try{
+    await adminCloud("POST",updated,m.match_id);
+
+    DATA.live_matches=await cloudMatches();
+    localStorage.setItem(
+      "nict_uploaded_matches",
+      JSON.stringify(DATA.live_matches||[])
+    );
+
+    const fresh=(DATA.live_matches||[]).find(
+      x=>String(x.match_id||"")===String(m.match_id||"")
+    )||updated;
+
+    if(fresh.player_records_enabled===true){
+      updateCareerFromMatch(fresh);
+    }
+
+    renderAdminMatches();
+    alert("Match completed. Selected records were updated.");
+  }catch(e){
+    alert("Could not complete match: "+e.message);
+  }
+}
+
 function eventBallOptions(m){const count=(m.deliveries||[]).length;return Array.from({length:count+1},(_,i)=>`<option value="${i}">${i===0?"Before first ball":`After ball ${i}`}</option>`).join("")}
 function saveUploadedMatches(local){localStorage.setItem("nict_uploaded_matches",JSON.stringify(local));DATA.live_matches=local}
 function addMatchEvent(index,type){const local=JSON.parse(localStorage.getItem("nict_uploaded_matches")||"[]"),match=local[index];if(!match)return;match.events=match.events||[];const afterBall=Number(document.getElementById(`eventBall${index}`).value);match.events=match.events.filter(e=>!(Number(e.afterBall)===afterBall&&e.type===type));match.events.push({type,afterBall,resumed:false});saveUploadedMatches(local);renderAdminMatches()}
@@ -781,6 +1008,10 @@ async function uploadJSON(){
     if(!d.team_a||!d.team_b)throw new Error("Team names missing.");
     d.file_name=f.name;d.match_id=d.match_id||f.name.replace(/\.json$/i,"");
     d.status="upcoming";d.started_at=null;
+     d.points_table_enabled=false;
+     d.player_records_enabled=false;
+     d.rankings_enabled=false;
+     d.records_applied=false;
     d.deliveries=d.deliveries.map(x=>({...x,
       batsman_team:x.batsman_team||((Number(x.innings||1)%2===1)?d.team_a:d.team_b),
       bowling_team:x.bowling_team||((Number(x.innings||1)%2===1)?d.team_b:d.team_a)
