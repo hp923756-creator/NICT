@@ -14,13 +14,21 @@
     <meta name="theme-color" content="#079b79">
 
     <!--
-      NICA FINAL FRONTEND
-      This index.html and app.js belong in the same directory.
-      The script below intentionally loads the local app.js.
-      All shared match state is read from /api/matches.
-    -->
-    <!--
-      Full application containing:
+      ==========================================================
+      NICT FINAL FRONTEND STRUCTURE
+      ==========================================================
+
+      ZIP currently contains TWO app.js files:
+
+        NICT-main/app.js
+        NICT-main/NICT-main/app.js
+
+      IMPORTANT:
+        This index intentionally loads the SECOND one:
+
+          NICT-main/NICT-main/app.js
+
+      because that is the full application containing:
         - Home
         - Live
         - Matches
@@ -116,64 +124,6 @@
             .desktop-nav{
                 display:none;
             }
-        }
-    
-        /* Navigation safety: drawer is interactive only when opened. */
-        .drawer:not(.open){pointer-events:none;}
-        .drawer.open{pointer-events:auto;}
-        #overlay:not(.show){pointer-events:none;}
-        #overlay.show{pointer-events:auto;}
-    
-
-        /* FINAL NAVIGATION SAFETY */
-        .topbar{
-            position:sticky !important;
-            z-index:1000 !important;
-        }
-
-        .desktop-nav{
-            position:relative;
-            z-index:1001;
-        }
-
-        .desktop-nav button,
-        .menu-btn,
-        .brand{
-            pointer-events:auto !important;
-            position:relative;
-            z-index:1002;
-        }
-
-        .menu-btn{
-            display:block !important;
-            margin-left:auto !important;
-            flex:0 0 auto !important;
-            visibility:visible !important;
-            opacity:1 !important;
-        }
-
-        #drawer{
-            z-index:2000 !important;
-        }
-
-        #overlay{
-            z-index:1900 !important;
-        }
-
-        .drawer:not(.open){
-            pointer-events:none;
-        }
-
-        .drawer.open{
-            pointer-events:auto;
-        }
-
-        #overlay:not(.show){
-            pointer-events:none;
-        }
-
-        #overlay.show{
-            pointer-events:auto;
         }
     </style>
 </head>
@@ -389,13 +339,6 @@
 
     <button
         type="button"
-        data-view="pointTable"
-    >
-        📋 Points Table 2026
-    </button>
-
-    <button
-        type="button"
         data-view="catchRecords"
     >
         🧤 Catch Records
@@ -467,13 +410,56 @@
 
 <!-- ==========================================================
      APPLICATION ROOT
+
+     The full nested app.js renders everything inside #app.
      ========================================================== -->
 
 <main id="app">
-    <div class="card empty">Loading NICA Cricket Association...</div>
+
+    <div class="card empty">
+        Loading NICA Cricket Association...
+    </div>
+
 </main>
 
-<script src="app.js" defer></script>
+
+<!-- ==========================================================
+     FOOTER
+     ========================================================== -->
+
+<footer
+    style="
+        text-align:center;
+        padding:20px;
+        color:#667085;
+        font-size:12px;
+    "
+>
+    NICA — Noida Intercollege Cricket Association
+    <br>
+    Live Cricket · Players · Rankings · Records
+</footer>
+
+
+<!-- ==========================================================
+     FINAL SCRIPT
+
+     VERY IMPORTANT:
+     DO NOT CHANGE THIS TO "app.js".
+
+     It must load the FULL application:
+
+         NICT-main/NICT-main/app.js
+
+     Because this index.html is located in:
+
+         NICT-main/index.html
+     ========================================================== -->
+
+<script
+    src="app.js"
+    defer
+></script>
 
 </body>
 </html>
