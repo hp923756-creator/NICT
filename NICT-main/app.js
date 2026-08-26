@@ -1,5 +1,5 @@
 * ============================================================
-   NICA FINAL APP.JS — BRANDING / LOGO UPDATE
+   NICA FINAL APP.JS — BRANDING AND LOGO UPDATE
    ============================================================
 
    Based on the full application app.js from the latest project.
@@ -485,7 +485,7 @@ function playingXI(m,a,b){
  return `<div class="squads">${box(a)}${box(b)}</div>`;
 }
 
-function teamsPage(){const rows=DATA.teams.map(t=>`<tr><td>${logo(t.short_team,"mini-logo")} <b>${esc(t.short_team)}</b></td><td>${t.matches}</td><td>${t.wins}</td><td>${t.losses}</td><td>${t.no_results}</td><td>${t.win_percentage}%</td></tr>`);app.innerHTML=head("Teams","Every team has 20 registered players · 11 playing XI + 9 standby")+table(["Team","Matches","Wins","Losses","NR","Win %"],rows)}
+function teamsPage(){const rows=DATA.teams.map(t=>`<tr><td><b>${esc(t.short_team)}</b></td><td>${t.matches}</td><td>${t.wins}</td><td>${t.losses}</td><td>${t.no_results}</td><td>${t.win_percentage}%</td></tr>`);app.innerHTML=head("Teams","Every team has 20 registered players · 11 playing XI + 9 standby")+table(["Team","Matches","Wins","Losses","NR","Win %"],rows)}
 function playersPage(){const rows=mergedCareerRecords().map(p=>`<tr><td>${playerLink(p.name)}</td><td>${p.team}</td><td>${esc(p.role)}</td><td>${fmt(p.runs)}</td><td>${p.average}</td><td>${p.hundreds}</td><td>${p.fifty_plus}</td><td>${p.wickets}</td><td>${p.catches}</td></tr>`);app.innerHTML=head("Players","100-player tournament database")+`<input id="ps" class="input search" placeholder="Search player or team">`+table(["Player","Team","Role","Runs","Avg","100s","50+","Wkts","Catches"],rows);document.getElementById("ps").oninput=e=>{let q=e.target.value.toLowerCase();document.querySelectorAll(".table tbody tr").forEach(r=>r.style.display=r.innerText.toLowerCase().includes(q)?"":"none")}}
 function playerPage(){
  const p=mergedCareerRecords().find(x=>x.name===currentPlayer);
