@@ -7,7 +7,7 @@
    CHANGES MADE:
    1. Playing XI: team logo removed.
    2. Team Records: kept exactly as-is (there was already no logo
-      rendered in the teamRecords() function).
+      team-record rendering is no longer exposed in the website).
    3. Main NICA header logo:
       IMPORTANT — the header is rendered by index.html, NOT this
       app.js. Therefore it cannot be safely changed here without
@@ -134,7 +134,7 @@ function render(){
  if(view==="records")return records(); if(view==="careerRecords")return careerRecords(); if(view==="centuryRecords")return leader("hundreds","Most Centuries");
  if(view==="fiftyRecords")return leader("fifty_plus","Most 50+ Scores"); if(view==="sixRecords")return leader("sixes","Most Sixes");
  if(view==="fourRecords")return leader("fours","Most Fours"); if(view==="wicketRecords")return leader("wickets","Most Wickets");
- if(view==="catchRecords")return catchesPage(); if(view==="pointTable"||view==="teamRecords")return pointTable(); if(view==="headToHead")return headToHead();
+ if(view==="catchRecords")return catchesPage(); if(view==="pointTable")return pointTable(); if(view==="headToHead")return headToHead();
  if(view==="stats")return stats(); if(view==="admin")return admin();
 }
 
@@ -423,6 +423,7 @@ function eventLabel(event){
  if(event.type==="tea")return `Tea break · Play resumes in ${formatCountdown(event.remaining)}`;
  if(event.type==="drinks")return `Drinks break · Play resumes in ${formatCountdown(event.remaining)}`;
  if(event.type==="rain")return "Rain suspension";
+ if(event.type==="suspend")return "Match suspended";
  if(event.type==="draw")return "Match drawn";
  return "Match in progress";
 }
@@ -1103,9 +1104,6 @@ function pointTableSection(format){
   </div>`;
 }
 
-function teamRecords(){
-  pointTable();
-}
 
 function pointTable(){
   app.innerHTML=head(
@@ -1117,7 +1115,16 @@ function pointTable(){
   pointTableSection("Test");
 }
 
-function records(){app.innerHTML=head("Records","Choose an individual or team record category")+`<div class="grid">${[["Career Records","careerRecords"],["Most Centuries","centuryRecords"],["Most 50+ Scores","fiftyRecords"],["Most Sixes","sixRecords"],["Most Fours","fourRecords"],["Most Wickets","wicketRecords"],["Most Catches","catchRecords"],["Points Table 2026","pointTable"]].map(x=>`<div class="card"><h3>${x[0]}</h3><button class="btn" onclick="navigate('${x[1]}')">Open</button></div>`).join("")}</div>`}
+function records(){app.innerHTML=head("Records","Choose an individual record category")+`<div class="grid">${[
+["Career Records","careerRecords"],
+["Most Centuries","centuryRecords"],
+["Most 50+ Scores","fiftyRecords"],
+["Most Sixes","sixRecords"],
+["Most Fours","fourRecords"],
+["Most Wickets","wicketRecords"],
+["Most Catches","catchRecords"],
+["Points Table 2026","pointTable"]
+].map(x=>`<div class="card"><h3>${x[0]}</h3><button class="btn" onclick="navigate('${x[1]}')">Open</button></div>`).join("")}</div>`}
 function headToHead(){const ts=Object.keys(DATA.squads||{});app.innerHTML=head("Head to Head","Opponent records from the supplied starting dataset")+`<div class="tabs">${ts.map(t=>`<button onclick="h2h('${t}')">${t}</button>`).join("")}</div><div id="h2h" class="card empty">Select a team.</div>`}
 function h2h(t){const rows=DATA.opponent_records.filter(x=>x.short_team===t||x.team===t).slice(0,50);document.getElementById("h2h").innerHTML=rows.length?table(Object.keys(rows[0]).slice(0,9),rows.map(x=>`<tr>${Object.values(x).slice(0,9).map(v=>`<td>${esc(v)}</td>`).join("")}</tr>`)):"No records found."}
 function stats(){app.innerHTML=head("Stats Explorer","Use the menu to move between format rankings, career records and opponent records")+`<div class="grid"><div class="card"><h3>Batting</h3><p>Runs · average · SR · 100s · 50+ · 4s · 6s</p><button class="btn" onclick="navigate('batRankings')">Open</button></div><div class="card"><h3>Bowling</h3><p>Overs · economy · wickets · bowling rating</p><button class="btn" onclick="navigate('bowlRankings')">Open</button></div><div class="card"><h3>Fielding</h3><p>Catches · stumpings · run-outs</p><button class="btn" onclick="navigate('catchRecords')">Open</button></div><div class="card"><h3>Player Career</h3><p>Separate Test, ODI and T20 records.</p><button class="btn" onclick="navigate('careerRecords')">Open</button></div></div>`}
@@ -1313,125 +1320,103 @@ function admin(){
  app.innerHTML=`<div class="admin-lock card"><h1>🔒 Admin</h1><p class="muted">Enter the tournament admin password.</p><input id="adminPass" class="input" type="password" placeholder="Password"><button class="btn" onclick="unlock()">Unlock Admin</button><p id="adminMsg" class="muted"></p></div>`;
 }
 function unlock(){const p=document.getElementById("adminPass").value;if(p==="@@098"){sessionStorage.setItem("nict_admin","true");sessionStorage.setItem("nict_admin_password",p);adminPanel()}else document.getElementById("adminMsg").textContent="Incorrect password."}
+
+function isMatchFinished(m){
+  if(!m)return false;
+
+  const status=String(
+    m.status ||
+    m.audit?.status ||
+    ""
+  ).toLowerCase();
+
+  if(["completed","finished","result"].includes(status))return true;
+
+  if(
+    m.match_finished===true ||
+    m.finished===true ||
+    m.completed===true ||
+    m.result_final===true
+  )return true;
+
+  const ds=Array.isArray(m.deliveries)?m.deliveries:[];
+  if(!ds.length)return false;
+
+  const last=ds[ds.length-1]||{};
+  if(
+    last.match_end===1 ||
+    last.match_finished===true ||
+    last.match_complete===true
+  )return true;
+
+  /*
+    If the feed contains explicit innings_end markers for the final
+    innings, the match is considered finished. This lets the admin
+    approve player stats without a separate "Complete Match" button.
+  */
+  const expectedInnings=careerFormat(m.format)==="Test"?4:2;
+  const inningsNumbers=[
+    ...new Set(
+      ds.map(d=>Number(d.innings||1))
+    )
+  ].sort((a,b)=>a-b);
+
+  if(
+    inningsNumbers.length>=expectedInnings &&
+    Number(last.innings_end||0)===1
+  )return true;
+
+  return false;
+}
+
 function adminPanel(){
- app.innerHTML=head("Admin","Upload a complete ball-by-ball JSON and start it in the frontend viewer")+
- `<div class="notice">Upload format: JSON with <b>deliveries</b>. Team names are normalized automatically. A filename such as <b>GCET_vs_GLB.json</b> is also understood. Uploaded matches are stored in this browser.</div>
- <div class="section upload-box"><h2>Upload Match JSON</h2><input class="input file" id="jsonFile" type="file" accept=".json,application/json"><button class="btn" onclick="uploadJSON()">Upload Match</button><p id="uploadMsg" class="muted"></p></div>
- <div class="section"><h2>Available Matches</h2><div id="adminMatches"></div></div>
- <div class="section"><button class="btn secondary" onclick="sessionStorage.removeItem('nict_admin');sessionStorage.removeItem('nict_admin_password');admin()">Lock Admin</button></div>`;
+ app.innerHTML=head(
+   "Admin",
+   "Match controls and player-stat approval"
+ )+
+ `<div class="notice">
+   Admin controls are intentionally limited to:
+   <b>Start Match</b>, <b>Rain</b>, <b>Suspend</b>,
+   <b>Resume Match</b> and <b>Update Stats of Player</b>.
+   Player career statistics are never changed automatically.
+ </div>
+ <div class="section">
+   <h2>Matches</h2>
+   <div id="adminMatches"></div>
+ </div>
+ <div class="section">
+   <button class="btn secondary"
+     onclick="sessionStorage.removeItem('nict_admin');sessionStorage.removeItem('nict_admin_password');admin()">
+     Lock Admin
+   </button>
+ </div>`;
  renderAdminMatches();
 }
 
 async function rebuildCareerFromCompletedMatches(){
   try{
     const r=await fetch("/api/stats",{cache:"no-store"});
-    if(!r.ok)throw new Error("Stats server unavailable");
+    if(!r.ok)throw new Error(await r.text()||"Stats server unavailable");
     const s=await r.json();
+
     if(s.career_records)DATA.career_records=s.career_records;
     if(s.players_format)DATA.players_format=s.players_format;
     if(s.batting_rankings)DATA.batting_rankings=s.batting_rankings;
     if(s.bowling_rankings)DATA.bowling_rankings=s.bowling_rankings;
     if(s.ratings)DATA.ratings=s.ratings;
+    if(s.opponent_records)DATA.opponent_records=s.opponent_records;
+
+    localStorage.setItem("nict_career_records",JSON.stringify(DATA.career_records||[]));
+    localStorage.setItem("nict_players_format",JSON.stringify(DATA.players_format||[]));
     renderAdminMatches();
-    alert("Career records and rankings refreshed from shared matches.");
-  }catch(e){alert(e.message)}
-}
-
-function renderAdminMatches(){
-  const box=document.getElementById("adminMatches");
-  if(!box)return;
-
-  const local=Array.isArray(DATA.live_matches)?DATA.live_matches:[];
-
-  const rows=local.map((m,i)=>{
-    const status=String(m.status||"upcoming").toLowerCase();
-    const completed=status==="completed";
-
-    return `<div class="match-card">
-      <b>${esc(st(m.team_a))} vs ${esc(st(m.team_b))}</b>
-      <div class="muted">${esc(m.format||"")} · ${esc(m.match_id||"")}</div>
-
-      <div class="notice">
-        Status: <b>${esc(status.toUpperCase())}</b>
-        ${completed&&m.result?` · ${esc(m.result)}`:""}
-      </div>
-
-      <div class="record-options">
-        <label>
-          <input type="checkbox" id="pts_${i}" ${m.points_table_enabled===true?"checked":""}>
-          Include in Points Table 2026
-        </label>
-
-        <label>
-          <input type="checkbox" id="player_${i}" ${m.player_records_enabled===true?"checked":""}>
-          Update Player Records
-        </label>
-
-        <label>
-          <input type="checkbox" id="rank_${i}" ${m.rankings_enabled===true?"checked":""}>
-          Update Rankings
-        </label>
-      </div>
-
-      <div class="event-controls">
-        <label>Event after
-          <select id="eventBall${i}" class="input">${eventBallOptions(m)}</select>
-        </label>
-        <button class="btn" onclick="addMatchEvent(${i},'tea')">Tea break</button>
-        <button class="btn" onclick="addMatchEvent(${i},'drinks')">Drinks break</button>
-        <button class="btn" onclick="addMatchEvent(${i},'rain')">Rain suspension</button>
-        <button class="btn" onclick="addMatchEvent(${i},'draw')">Draw</button>
-        <button class="btn secondary" onclick="resumeRain(${i})">Resume rain</button>
-      </div>
-
-      <div style="margin-top:8px">
-        <button class="btn secondary" onclick="saveMatchRecordOptions(${i})">
-          Save Record Settings
-        </button>
-        <button class="btn" onclick="useUploaded(${i})" ${completed?"disabled":""}>
-          Start Match
-        </button>
-        <button class="btn secondary" onclick="completeMatchNow(${i})" ${completed?"disabled":""}>
-          Complete Match
-        </button>
-        <button class="btn danger" onclick="deleteUploaded(${i})">
-          Delete
-        </button>
-      </div>
-    </div>`;
-  }).join("");
-
-  box.innerHTML=rows||`<div class="empty">No matches available.</div>`;
-}
-
-async function saveMatchRecordOptions(index){
-  const m=DATA.live_matches?.[index];
-  if(!m)return;
-
-  if(sessionStorage.getItem("nict_admin")!=="true"){
-    alert("Admin authentication required.");
-    return;
-  }
-
-  const updated={
-    ...m,
-    points_table_enabled:document.getElementById(`pts_${index}`)?.checked===true,
-    player_records_enabled:document.getElementById(`player_${index}`)?.checked===true,
-    rankings_enabled:document.getElementById(`rank_${index}`)?.checked===true
-  };
-
-  try{
-    await adminCloud("POST",updated,m.match_id);
-    DATA.live_matches=await cloudMatches();
-    localStorage.setItem("nict_uploaded_matches",JSON.stringify(DATA.live_matches||[]));
-    renderAdminMatches();
-    alert("Record settings saved for this match.");
+    render();
+    alert("Approved player statistics have been refreshed.");
   }catch(e){
-    alert("Could not save record settings: "+e.message);
+    alert("Could not update player stats: "+e.message);
   }
 }
 
-async function completeMatchNow(index){
+async function updatePlayerStats(index){
   const m=DATA.live_matches?.[index];
   if(!m)return;
 
@@ -1440,29 +1425,39 @@ async function completeMatchNow(index){
     return;
   }
 
-  if(String(m.status||"").toLowerCase()==="completed"){
-    alert("This match is already completed.");
+  if(!isMatchFinished(m)){
+    alert(
+      "Player career cannot be updated yet. Finish the match first, then use Update Stats of Player."
+    );
     return;
   }
 
-  if(!confirm(
-    `Complete ${st(m.team_a)} vs ${st(m.team_b)}?\n\nOnly the selected record settings will be updated.`
-  ))return;
+  if(m.player_records_enabled===true){
+    if(!confirm("Player stats are already approved for this match. Rebuild shared player statistics again?"))return;
+  }else if(!confirm(
+    `Allow player career statistics for ${st(m.team_a)} vs ${st(m.team_b)}?`
+  )){
+    return;
+  }
 
   const result=deriveCompletedMatchResult(m);
+  const now=new Date().toISOString();
 
   const updated={
     ...m,
     status:"completed",
-    winner:result.winner||"",
-    result:result.text||(
+    winner:result.winner||m.winner||"",
+    result:result.text||m.result||(
       result.type==="WIN"
         ? `${result.winner} won`
         : result.type==="TIE"
           ? "Match tied"
           : "No Result"
     ),
-    completed_at:new Date().toISOString()
+    completed_at:m.completed_at||now,
+    player_records_enabled:true,
+    player_stats_approved:true,
+    player_stats_approved_at:now
   };
 
   try{
@@ -1474,25 +1469,165 @@ async function completeMatchNow(index){
       JSON.stringify(DATA.live_matches||[])
     );
 
-    const fresh=(DATA.live_matches||[]).find(
-      x=>String(x.match_id||"")===String(m.match_id||"")
-    )||updated;
-
-    if(fresh.player_records_enabled===true){
-      updateCareerFromMatch(fresh);
-    }
-
-    renderAdminMatches();
-    alert("Match completed. Selected records were updated.");
+    await rebuildCareerFromCompletedMatches();
   }catch(e){
-    alert("Could not complete match: "+e.message);
+    alert("Could not approve player stats: "+e.message);
+  }
+}
+
+function renderAdminMatches(){
+  const box=document.getElementById("adminMatches");
+  if(!box)return;
+
+  const local=Array.isArray(DATA.live_matches)?DATA.live_matches:[];
+
+  const rows=local.map((m,i)=>{
+    const status=String(m.status||"upcoming").toLowerCase();
+    const finished=isMatchFinished(m);
+    const started=["live","in_progress","started"].includes(status);
+    const statsApproved=m.player_records_enabled===true;
+
+    return `<div class="match-card">
+      <b>${esc(st(m.team_a))} vs ${esc(st(m.team_b))}</b>
+      <div class="muted">${esc(m.format||"")} · ${esc(m.match_id||"")}</div>
+
+      <div class="notice">
+        Status: <b>${esc(status.toUpperCase())}</b>
+        ${m.result?` · ${esc(m.result)}`:""}
+        ${finished?` · <b>MATCH FINISHED</b>`:""}
+        ${statsApproved?` · <b>PLAYER STATS APPROVED</b>`:""}
+      </div>
+
+      <div class="event-controls">
+        <label>Event after
+          <select id="eventBall${i}" class="input">
+            ${eventBallOptions(m)}
+          </select>
+        </label>
+
+        <button class="btn"
+          onclick="addMatchEvent(${i},'rain')">
+          Rain
+        </button>
+
+        <button class="btn"
+          onclick="addMatchEvent(${i},'suspend')">
+          Suspend Match
+        </button>
+
+        <button class="btn secondary"
+          onclick="resumeMatch(${i})">
+          Resume Match
+        </button>
+      </div>
+
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn"
+          onclick="useUploaded(${i})"
+          ${started||finished?"disabled":""}>
+          Start Match
+        </button>
+
+        <button class="btn"
+          onclick="updatePlayerStats(${i})"
+          ${finished?"":"disabled"}>
+          Update Stats of Player
+        </button>
+      </div>
+    </div>`;
+  }).join("");
+
+  box.innerHTML=rows||`<div class="empty">No matches available.</div>`;
+}
+
+function eventBallOptions(m){
+  const count=(m.deliveries||[]).length;
+  return Array.from(
+    {length:count+1},
+    (_,i)=>`<option value="${i}">
+      ${i===0?"Before first ball":`After ball ${i}`}
+    </option>`
+  ).join("");
+}
+
+async function addMatchEvent(index,type){
+  const m=DATA.live_matches?.[index];
+  if(!m)return;
+
+  if(sessionStorage.getItem("nict_admin")!=="true"){
+    alert("Admin authentication required.");
+    return;
+  }
+
+  const afterBall=Number(
+    document.getElementById(`eventBall${index}`)?.value||0
+  );
+
+  const events=Array.isArray(m.events)
+    ?m.events.filter(e=>!(
+        Number(e.afterBall)===afterBall &&
+        e.type===type
+      ))
+    :[];
+
+  events.push({
+    type,
+    afterBall,
+    resumed:false,
+    created_at:new Date().toISOString()
+  });
+
+  try{
+    const updated={...m,events};
+    await adminCloud("POST",updated,m.match_id);
+    DATA.live_matches=await cloudMatches();
+    localStorage.setItem(
+      "nict_uploaded_matches",
+      JSON.stringify(DATA.live_matches||[])
+    );
+    renderAdminMatches();
+  }catch(e){
+    alert("Could not save match event: "+e.message);
+  }
+}
+
+async function resumeMatch(index){
+  const m=DATA.live_matches?.[index];
+  if(!m)return;
+
+  if(sessionStorage.getItem("nict_admin")!=="true"){
+    alert("Admin authentication required.");
+    return;
+  }
+
+  const events=(m.events||[]).map(e=>(
+    e.type==="rain"||e.type==="suspend"
+      ?{...e,resumed:true,resumed_at:new Date().toISOString()}
+      :e
+  ));
+
+  try{
+    const updated={
+      ...m,
+      events,
+      match_suspended:false
+    };
+
+    await adminCloud("POST",updated,m.match_id);
+    DATA.live_matches=await cloudMatches();
+    localStorage.setItem(
+      "nict_uploaded_matches",
+      JSON.stringify(DATA.live_matches||[])
+    );
+    renderAdminMatches();
+  }catch(e){
+    alert("Could not resume match: "+e.message);
   }
 }
 
 function eventBallOptions(m){const count=(m.deliveries||[]).length;return Array.from({length:count+1},(_,i)=>`<option value="${i}">${i===0?"Before first ball":`After ball ${i}`}</option>`).join("")}
 function saveUploadedMatches(local){localStorage.setItem("nict_uploaded_matches",JSON.stringify(local));DATA.live_matches=local}
 function addMatchEvent(index,type){const local=JSON.parse(localStorage.getItem("nict_uploaded_matches")||"[]"),match=local[index];if(!match)return;match.events=match.events||[];const afterBall=Number(document.getElementById(`eventBall${index}`).value);match.events=match.events.filter(e=>!(Number(e.afterBall)===afterBall&&e.type===type));match.events.push({type,afterBall,resumed:false});saveUploadedMatches(local);renderAdminMatches()}
-function resumeRain(index){const local=JSON.parse(localStorage.getItem("nict_uploaded_matches")||"[]"),match=local[index];if(!match)return;(match.events||[]).filter(e=>e.type==="rain").forEach(e=>e.resumed=true);saveUploadedMatches(local);renderAdminMatches()}
 function parseFilename(name){
  const clean=name.replace(/\.[^.]+$/,"");
  const m=clean.match(/(.+?)_vs_(.+)$/i);
