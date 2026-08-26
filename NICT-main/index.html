@@ -117,6 +117,12 @@
                 display:none;
             }
         }
+    
+        /* Navigation safety: drawer is interactive only when opened. */
+        .drawer:not(.open){pointer-events:none;}
+        .drawer.open{pointer-events:auto;}
+        #overlay:not(.show){pointer-events:none;}
+        #overlay.show{pointer-events:auto;}
     </style>
 </head>
 
