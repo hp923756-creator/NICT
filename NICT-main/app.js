@@ -134,7 +134,7 @@ function render(){
  if(view==="records")return records(); if(view==="careerRecords")return careerRecords(); if(view==="centuryRecords")return leader("hundreds","Most Centuries");
  if(view==="fiftyRecords")return leader("fifty_plus","Most 50+ Scores"); if(view==="sixRecords")return leader("sixes","Most Sixes");
  if(view==="fourRecords")return leader("fours","Most Fours"); if(view==="wicketRecords")return leader("wickets","Most Wickets");
- if(view==="catchRecords")return catchesPage(); if(view==="pointTable"||view==="teamRecords")return pointTable(); if(view==="headToHead")return headToHead();
+ if(view==="catchRecords")return catchesPage(); if(view==="teamRecords")return teamRecords(); if(view==="pointTable")return pointTable(); if(view==="headToHead")return headToHead();
  if(view==="stats")return stats(); if(view==="admin")return admin();
 }
 
@@ -296,7 +296,10 @@ function renderLive(raw){
 
   const seenBatters=new Set();
   const commentary=prepared.map((d,i)=>{
+    const previous=prepared[i-1];
+    const previousNoBall=previous && ["no-ball","noball","no_ball","no ball"].includes(String(previous.extra_type||"").toLowerCase());
     const md=milestoneDelivery(prepared,i);
+    if(previousNoBall&&!d.wicket)d.free_hit=true;
     const newcomers=[d.batsman,d.non_striker]
       .filter(n=>n&&!seenBatters.has(n));
     newcomers.forEach(n=>seenBatters.add(n));
@@ -314,7 +317,7 @@ function renderLive(raw){
   const matchEvent=replayState.event;
 
   const finished=shown.length===ds.length&&ds.length>0;
-  const resultText=finished?matchResultText(m,shown):"";
+  const resultText=(m.status==="completed"||finished)?matchResultText(m,finished?shown:ds):"";
 
   let statusLabel="LIVE";
   const testSession=testSessionForDelivery(prepared,Math.max(0,prepared.length-1),m);
@@ -419,7 +422,7 @@ function formatCountdown(seconds){
 function eventLabel(event){
  if(event.type==="toss")return `Toss result confirmed · First ball in ${formatCountdown(event.remaining)}`;
  if(event.type==="innings_break")return `Innings break · Second innings in ${formatCountdown(event.remaining)}`;
- if(event.type==="over_break")return `Over break · Next ball in ${formatCountdown(event.remaining)}`;
+ if(event.type==="over_break")return "";
  if(event.type==="tea")return `Tea break · Play resumes in ${formatCountdown(event.remaining)}`;
  if(event.type==="drinks")return `Drinks break · Play resumes in ${formatCountdown(event.remaining)}`;
  if(event.type==="rain")return "Rain suspension";
@@ -575,7 +578,7 @@ function getReplayState(ds,elapsed,m){
 }
 
 function legalCountBefore(ds,i){return ds.slice(0,i).filter(legalBall).length}
-function legalBall(d){return !["wide","no-ball","noball"].includes(String(d.extra_type||"").toLowerCase())}
+function legalBall(d){return !["wide","no-ball","noball","no_ball","no ball"].includes(String(d.extra_type||"").toLowerCase())}
 
 function inningsLimitOvers(m){
   const format=careerFormat(m?.format);
@@ -625,6 +628,12 @@ function calcMatch(ds,m,forcedInnings=null){
 
     if(bats)striker=bats;
     if(ns)non=ns;
+    const pairKey=(bats&&ns)?[bats,ns].sort().join("|"):"";
+    if(pairKey&&pairKey!==partnershipPair){
+      partnershipPair=pairKey;
+      partnershipRuns=0;
+      partnershipBalls=0;
+    }
 
     if(bats&&!bat[bats])bat[bats]={name:bats,runs:0,balls:0,fours:0,sixes:0,out:false,seen:false};
     if(non&&!bat[non])bat[non]={name:non,runs:0,balls:0,fours:0,sixes:0,out:false,seen:false};
@@ -790,6 +799,7 @@ function commentaryHTML(d,newcomers=[],format="",displayBall=""){
         :(d.extra_type||"").toUpperCase()||`${r} RUN`;
 
   const tags=[
+    d.free_hit?"FREE HIT":"",
     d.shot?`Shot: ${d.shot}`:"",
     d.shot_direction?`Direction: ${d.shot_direction}`:"",
     d.length?`Length: ${d.length}`:"",
@@ -1104,7 +1114,64 @@ function pointTableSection(format){
 }
 
 function teamRecords(){
-  pointTable();
+  const baseTeams=Array.isArray(DATA.teams)?DATA.teams:[];
+  const teams=["GCET","GLB","ABES","JSS","KCC"];
+  const completed=(DATA.live_matches||[]).filter(m=>
+    String(m?.status||"").toLowerCase()==="completed" &&
+    m?.team_records_enabled!==false
+  );
+
+  const rows=teams.map(team=>{
+    const base=baseTeams.find(x=>st(x.short_team||x.team)===team)||{};
+    let matches=Number(base.matches||0);
+    let wins=Number(base.wins||0);
+    let losses=Number(base.losses||0);
+    let nr=Number(base.no_results||base.nr||0);
+    let ties=Number(base.ties||0);
+    const seen=new Set();
+
+    for(const m of completed){
+      const id=String(m.match_id||m.id||m.file_name||"");
+      if(!id||seen.has(id))continue;
+      seen.add(id);
+
+      const a=st(m.team_a),b=st(m.team_b);
+      if(team!==a&&team!==b)continue;
+
+      const result=deriveCompletedMatchResult(m);
+      matches++;
+      if(result.type==="WIN"){
+        if(result.winner===team)wins++;
+        else losses++;
+      }else if(result.type==="TIE"){
+        ties++;
+      }else{
+        nr++;
+      }
+    }
+
+    const decided=Math.max(0,matches-nr);
+    const winPct=decided?((wins/decided)*100).toFixed(1):"0.0";
+
+    return `<tr>
+      <td><b>${esc(team)}</b></td>
+      <td>${matches}</td>
+      <td>${wins}</td>
+      <td>${losses}</td>
+      <td>${ties}</td>
+      <td>${nr}</td>
+      <td>${winPct}%</td>
+    </tr>`;
+  }).join("");
+
+  app.innerHTML=head(
+    "Team Records",
+    "Historical team records plus every newly completed match. Updated automatically after match completion."
+  )+
+  table(
+    ["Team","Matches","Wins","Losses","Ties","No Results","Win %"],
+    rows
+  );
 }
 
 function pointTable(){
@@ -1462,6 +1529,7 @@ async function completeMatchNow(index){
           ? "Match tied"
           : "No Result"
     ),
+    team_records_enabled:m.team_records_enabled!==false,
     completed_at:new Date().toISOString()
   };
 
@@ -1512,6 +1580,7 @@ async function uploadJSON(){
      d.points_table_enabled=false;
      d.player_records_enabled=false;
      d.rankings_enabled=false;
+     d.team_records_enabled=true;
      d.records_applied=false;
     d.deliveries=d.deliveries.map(x=>({...x,
       batsman_team:x.batsman_team||((Number(x.innings||1)%2===1)?d.team_a:d.team_b),
@@ -1545,5 +1614,6 @@ async function deleteUploaded(i){
 }
 
 loadData();
+
 
 
