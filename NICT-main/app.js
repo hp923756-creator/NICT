@@ -528,6 +528,40 @@ function careerRecords(){
  };
 }
 function catchesPage(){app.innerHTML=head("Most Catches","Fielding leaderboard");app.innerHTML+=table(["Rank","Player","Team","Catches","Stumpings","Run-outs"],DATA.catches.map(x=>`<tr><td>${x.catch_rank}</td><td>${playerLink(x.player)}</td><td>${x.short_team}</td><td>${x.total_catches}</td><td>${x.total_stumpings}</td><td>${x.total_runouts}</td></tr>`))}
+function deriveCompletedMatchResult(m){
+  const ds=Array.isArray(m?.deliveries)?m.deliveries:[];
+  const teams=[st(m?.team_a),st(m?.team_b)];
+
+  if(!ds.length)return {type:"NR",winner:"",loser:""};
+
+  const innings={};
+  for(const d of ds){
+    const n=Number(d?.innings||1);
+    if(!innings[n])innings[n]={runs:0,wickets:0};
+    innings[n].runs += Number(d?.runs||0)+Number(d?.extra_runs||0);
+    innings[n].wickets += Number(d?.wicket||0);
+  }
+
+  const nums=Object.keys(innings).map(Number).sort((a,b)=>a-b);
+  if(nums.length<2)return {type:"NR",winner:"",loser:""};
+
+  const firstBatTeam=
+    st(ds.find(d=>Number(d?.innings||1)===nums[0])?.batsman_team) ||
+    st(m?.batting_first) ||
+    teams[0];
+
+  const secondBatTeam=firstBatTeam===teams[0]?teams[1]:teams[0];
+  const first=innings[nums[0]].runs;
+  const second=innings[nums[1]].runs;
+
+  if(first===second)return {type:"TIE",winner:"",loser:""};
+
+  const winner=first>second?firstBatTeam:secondBatTeam;
+  const loser=winner===teams[0]?teams[1]:teams[0];
+
+  return {type:"WIN",winner,loser};
+}
+
 function pointTableData(format){
   const table=Object.fromEntries(
     ["GCET","GLB","ABES","JSS","KCC"].map(team=>[
@@ -1044,4 +1078,5 @@ async function deleteUploaded(i){
 }
 
 loadData();
+
 
