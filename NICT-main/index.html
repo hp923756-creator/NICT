@@ -123,6 +123,58 @@
         .drawer.open{pointer-events:auto;}
         #overlay:not(.show){pointer-events:none;}
         #overlay.show{pointer-events:auto;}
+    
+
+        /* FINAL NAVIGATION SAFETY */
+        .topbar{
+            position:sticky !important;
+            z-index:1000 !important;
+        }
+
+        .desktop-nav{
+            position:relative;
+            z-index:1001;
+        }
+
+        .desktop-nav button,
+        .menu-btn,
+        .brand{
+            pointer-events:auto !important;
+            position:relative;
+            z-index:1002;
+        }
+
+        .menu-btn{
+            display:block !important;
+            margin-left:auto !important;
+            flex:0 0 auto !important;
+            visibility:visible !important;
+            opacity:1 !important;
+        }
+
+        #drawer{
+            z-index:2000 !important;
+        }
+
+        #overlay{
+            z-index:1900 !important;
+        }
+
+        .drawer:not(.open){
+            pointer-events:none;
+        }
+
+        .drawer.open{
+            pointer-events:auto;
+        }
+
+        #overlay:not(.show){
+            pointer-events:none;
+        }
+
+        #overlay.show{
+            pointer-events:auto;
+        }
     </style>
 </head>
 
