@@ -1,3 +1,6 @@
+FILE: app.js
+================================================================================
+
 /* ============================================================
    NICA FINAL APP.JS — BRANDING AND LOGO UPDATE
    ============================================================
@@ -1533,6 +1536,11 @@ function renderAdminMatches(){
           ${finished?"":"disabled"}>
           Update Stats of Player
         </button>
+
+        <button class="btn delete-match-btn"
+          onclick="deleteLiveMatch(${i})">
+          🗑 Delete Match
+        </button>
       </div>
     </div>`;
   }).join("");
@@ -1670,15 +1678,689 @@ async function useUploaded(i){
     view="live";render();
   }catch(e){alert("Could not start shared live match: "+e.message)}
 }
-async function deleteUploaded(i){
-  const m=DATA.live_matches?.[i];if(!m)return;
+async function deleteLiveMatch(i){
+  const m=DATA.live_matches?.[i];
+
+  if(!m){
+    alert("Match not found.");
+    return;
+  }
+
+  if(sessionStorage.getItem("nict_admin")!=="true"){
+    alert("Admin access required.");
+    return;
+  }
+
+  const matchName=`${st(m.team_a)} vs ${st(m.team_b)}`;
+
+  const confirmDelete=confirm(
+    `⚠️ DELETE MATCH?\n\n${matchName}\n\n`+
+    `Match ID: ${m.match_id||"N/A"}\n\n`+
+    `This action will permanently delete this match.\n`+
+    `This cannot be undone.\n\n`+
+    `Press OK to delete or Cancel to keep the match.`
+  );
+
+  if(!confirmDelete)return;
+
   try{
     await adminCloud("DELETE",null,m.match_id);
+
     DATA.live_matches=await cloudMatches();
+
+    localStorage.setItem(
+      "nict_uploaded_matches",
+      JSON.stringify(DATA.live_matches||[])
+    );
+
+    const activeMatchId=localStorage.getItem("nict_active_match_id");
+
+    if(String(activeMatchId)===String(m.match_id)){
+      localStorage.removeItem("nict_active_match_id");
+      localStorage.removeItem("nict_active_match");
+    }
+
     renderAdminMatches();
-  }catch(e){alert("Delete failed: "+e.message)}
+
+    alert(`✅ Match deleted successfully.\n\n${matchName}`);
+
+  }catch(e){
+    console.error("Delete match error:",e);
+    alert("❌ Delete failed: "+(e.message||"Unknown error"));
+  }
+}
+
+// Backward compatibility if any existing HTML still calls deleteUploaded
+async function deleteUploaded(i){
+  return deleteLiveMatch(i);
 }
 
 loadData();
 
+
+
+
+
+FILE: style.css
+================================================================================
+
+/* ============================================================
+   NICT SCORECARD THEME — INSPIRED BY THE SUPPLIED VIDEO
+   ============================================================ */
+
+:root{
+  --bg:#eef1f3;
+  --card:#ffffff;
+  --ink:#1f2933;
+  --muted:#667085;
+  --line:#d9dde1;
+  --green:#079b79;
+  --green-dark:#087f66;
+  --green-soft:#e7f6f1;
+  --red:#c62828;
+  --amber:#a35b00;
+  --blue:#1769aa;
+  --dark:#17212b;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:Arial,Helvetica,sans-serif;
+}
+
+.topbar{
+  min-height:58px;
+  background:#fff;
+  border-bottom:1px solid var(--line);
+  display:flex;
+  align-items:center;
+  padding:0 22px;
+  gap:22px;
+  position:sticky;
+  top:0;
+  z-index:50;
+}
+
+.brand{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  text-decoration:none;
+  color:var(--ink);
+  font-weight:900;
+  white-space:nowrap;
+}
+
+.brand small{
+  color:#8a929b;
+  font-size:9px;
+  letter-spacing:.3px;
+}
+
+.desktop-nav{
+  display:flex;
+  gap:2px;
+  overflow:auto;
+}
+
+.desktop-nav button,
+.menu-btn{
+  border:0;
+  background:transparent;
+  padding:10px;
+  font-weight:800;
+  color:#344054;
+  cursor:pointer;
+}
+
+.desktop-nav button:hover,
+.menu-btn:hover{
+  color:var(--green);
+}
+
+.menu-btn{
+  margin-left:auto;
+  border:1px solid var(--line);
+  border-radius:8px;
+}
+
+.drawer{
+  position:fixed;
+  right:-360px;
+  top:0;
+  width:360px;
+  height:100vh;
+  background:#fff;
+  z-index:100;
+  box-shadow:-12px 0 35px #0003;
+  padding:16px;
+  overflow:auto;
+  transition:right .2s ease;
+}
+
+.drawer.open{right:0}
+
+.drawer-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:8px;
+  font-size:20px;
+}
+
+.drawer-head button{
+  border:0;
+  background:transparent;
+  font-size:28px;
+  cursor:pointer;
+}
+
+.drawer>button{
+  width:100%;
+  display:block;
+  border:0;
+  border-bottom:1px solid #eef0f2;
+  background:#fff;
+  text-align:left;
+  padding:12px 5px;
+  font-weight:750;
+  cursor:pointer;
+}
+
+.drawer>button:hover{
+  color:var(--green);
+  background:#f6fbf9;
+}
+
+#overlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:#0008;
+  z-index:90;
+}
+
+#overlay.show{display:block}
+
+main{
+  max-width:1180px;
+  margin:0 auto;
+  padding:24px 18px 50px;
+}
+
+.page-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:16px;
+  margin-bottom:18px;
+}
+
+.page-head h1{
+  margin:0;
+  font-size:28px;
+}
+
+.muted{color:var(--muted)}
+
+.small-note{
+  font-size:11px;
+  margin-top:8px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:14px;
+}
+
+.card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:16px;
+}
+
+.card h2,
+.card h3,
+.card h4{
+  margin:0 0 8px;
+}
+
+.big{
+  font-size:30px;
+  font-weight:900;
+}
+
+.section{
+  margin-top:20px;
+}
+
+.tabs{
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+}
+
+.btn{
+  border:0;
+  background:var(--green);
+  color:#fff;
+  border-radius:7px;
+  padding:10px 14px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.btn:hover{background:var(--green-dark)}
+
+.btn.secondary{
+  background:#344054;
+}
+
+.btn.danger{
+  background:#b42318;
+}
+
+.input,
+.select{
+  width:100%;
+  padding:11px;
+  border:1px solid #cfd5dc;
+  border-radius:7px;
+  background:#fff;
+}
+
+.notice{
+  padding:11px 13px;
+  border:1px solid #f0cf86;
+  background:#fff8e8;
+  color:#765000;
+  border-radius:7px;
+  margin:10px 0;
+}
+
+.pill{
+  display:inline-block;
+  padding:5px 9px;
+  border-radius:999px;
+  background:#edf4f0;
+  color:var(--green-dark);
+  font-size:12px;
+  font-weight:800;
+}
+
+.live-pill{
+  background:#fff0ef;
+  color:var(--red);
+}
+
+.match-list{
+  display:grid;
+  gap:12px;
+}
+
+.match-card{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:15px;
+}
+
+.scoretop{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:18px;
+}
+
+.team-logo{
+  width:52px;
+  height:52px;
+  object-fit:contain;
+  background:#fff;
+  border-radius:7px;
+}
+
+.team-logos{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.meta{
+  color:#71808d;
+  font-size:12px;
+}
+
+.empty{
+  padding:28px;
+  text-align:center;
+  color:var(--muted);
+}
+
+/* ============================================================
+   SCORECARD — VIDEO STYLE
+   ============================================================ */
+
+.scorecard-shell{
+  background:#fff;
+  border:1px solid #d7dbde;
+  border-radius:2px;
+  overflow:hidden;
+}
+
+.scorecard-meta{
+  display:flex;
+  gap:14px;
+  flex-wrap:wrap;
+  padding:12px 14px;
+  border-bottom:1px solid #e2e5e7;
+  font-size:12px;
+  color:#707981;
+}
+
+.result-line{
+  padding:11px 14px;
+  color:var(--green-dark);
+  font-weight:800;
+}
+
+.innings-pills{
+  display:flex;
+  gap:8px;
+  padding:4px 14px 13px;
+  overflow-x:auto;
+}
+
+.innings-pill{
+  border:0;
+  background:#dce9e5;
+  color:#36554d;
+  border-radius:18px;
+  padding:7px 13px;
+  font-weight:800;
+  white-space:nowrap;
+  cursor:pointer;
+}
+
+.innings-pill.active{
+  background:var(--green);
+  color:#fff;
+}
+
+.innings-pill.disabled{
+  opacity:.45;
+  cursor:not-allowed;
+}
+
+.scorecard-team-header{
+  background:var(--green);
+  color:#fff;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:11px 14px;
+}
+
+.scorecard-team-name{
+  font-size:17px;
+  font-weight:900;
+}
+
+.scorecard-innings-label{
+  font-size:11px;
+  margin-left:8px;
+  opacity:.85;
+}
+
+.scorecard-team-total{
+  font-size:18px;
+  font-weight:900;
+}
+
+.scorecard-team-total span{
+  font-size:12px;
+  font-weight:700;
+  margin-left:5px;
+}
+
+.scorecard-table-wrap{
+  overflow-x:auto;
+}
+
+.scorecard-table{
+  width:100%;
+  min-width:720px;
+  border-collapse:collapse;
+  background:#fff;
+}
+
+.scorecard-table th,
+.scorecard-table td{
+  padding:8px 10px;
+  border-bottom:1px solid #e4e7e9;
+  font-size:13px;
+  text-align:left;
+  white-space:nowrap;
+}
+
+.scorecard-table th{
+  background:#e9e9e9;
+  color:#555;
+  font-size:11px;
+  font-weight:900;
+}
+
+.scorecard-table td.num,
+.scorecard-table th:not(:first-child){
+  text-align:center;
+}
+
+.scorecard-table td.strong{
+  font-weight:900;
+}
+
+.scorecard-table .batter-name{
+  color:#2870b2;
+  font-weight:700;
+}
+
+.scorecard-table .dismissal{
+  color:#69727b;
+  font-size:11px;
+  min-width:190px;
+}
+
+.scorecard-subtitle{
+  font-size:15px;
+  margin:0 0 8px;
+}
+
+.scorecard-section{
+  padding:0 14px;
+}
+
+.extras-row{
+  display:flex;
+  justify-content:space-between;
+  gap:18px;
+  padding:11px 10px;
+  border-bottom:1px solid #e4e7e9;
+  font-size:13px;
+}
+
+.scorecard-total{
+  display:flex;
+  justify-content:space-between;
+  gap:18px;
+  padding:12px 24px;
+  font-size:14px;
+  border-bottom:1px solid #d8dcdf;
+}
+
+.live-ball-panel{
+  margin:14px;
+  padding:14px;
+  border:1px solid #cfe6df;
+  background:#f4fbf9;
+  border-radius:8px;
+}
+
+.live-label{
+  color:var(--green-dark);
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.4px;
+}
+
+.live-ball-main{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  margin:7px 0;
+}
+
+.shot-tags{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  margin:7px 0;
+}
+
+.tag{
+  background:#eef2f4;
+  border-radius:999px;
+  padding:4px 7px;
+  font-size:10px;
+  font-weight:900;
+}
+
+.lastballs{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  margin-top:9px;
+}
+
+.ball{
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  background:#f0f2f3;
+  border:1px solid #d7dbde;
+  font-size:11px;
+  font-weight:900;
+}
+
+.ball.four{
+  background:#e8f2ff;
+  color:#145c9e;
+}
+
+.ball.six{
+  background:#e7f8ef;
+  color:#087443;
+}
+
+.ball.wicket{
+  background:#ffeded;
+  color:#b42318;
+}
+
+.ball.extra{
+  background:#fff4df;
+  color:#9b5c00;
+}
+
+.scorecard-footer{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+  padding:11px 14px;
+  background:#f7f8f9;
+  border-top:1px solid #e1e4e6;
+  color:#68727b;
+  font-size:11px;
+}
+
+/* ============================================================
+   OLD/GENERAL TABLES
+   ============================================================ */
+
+.table-wrap{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:9px;
+  overflow:auto;
+}
+
+.table{
+  border-collapse:collapse;
+  width:100%;
+  min-width:700px;
+}
+
+.table th,
+.table td{
+  padding:10px 12px;
+  border-bottom:1px solid var(--line);
+  font-size:13px;
+  text-align:left;
+  white-space:nowrap;
+}
+
+.table th{
+  background:#f6f7f8;
+  color:#475467;
+  font-size:11px;
+  text-transform:uppercase;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media(max-width:950px){
+  .desktop-nav{display:none}
+  .grid{grid-template-columns:repeat(2,1fr)}
+  main{padding:16px 12px 40px}
+}
+
+@media(max-width:600px){
+  .grid{grid-template-columns:1fr}
+  .brand small{display:none}
+  .drawer{width:88%}
+  .scoretop{align-items:flex-start}
+  .scorecard-team-header{
+    align-items:flex-start;
+    gap:10px;
+  }
+  .scorecard-team-total{
+    font-size:15px;
+  }
+}
+
+
+/* ================= DELETE LIVE MATCH BUTTON ================= */
+.delete-match-btn{
+  background:#dc2626 !important;
+  color:#fff !important;
+  border:none !important;
+}
+
+.delete-match-btn:hover{
+  background:#b91c1c !important;
+}
+
+.delete-match-btn:active{
+  transform:scale(.97);
+}
 
