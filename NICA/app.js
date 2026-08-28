@@ -37,19 +37,75 @@ const CLOUD_API="/api/matches";
 let CLOUD_MATCHES=[];
 async function cloudMatches(){
   try{
-    const r=await fetch(CLOUD_API,{cache:"no-store"});
-    if(!r.ok)throw new Error(await r.text());
-    const rows=await r.json();
-    CLOUD_MATCHES=(Array.isArray(rows)?rows:[]).map(x=>x.match_json||x);
+    const r=await fetch(CLOUD_API,{
+      method:"GET",
+      cache:"no-store"
+    });
+
+    const text=await r.text();
+
+    if(!r.ok){
+      throw new Error(text||"Could not load matches from shared server.");
+    }
+
+    let rows=[];
+    try{
+      rows=JSON.parse(text);
+    }catch(e){
+      throw new Error("Server returned invalid match data.");
+    }
+
+    if(!Array.isArray(rows)){
+      rows=Array.isArray(rows.matches)?rows.matches:[];
+    }
+
+    CLOUD_MATCHES=rows
+      .map(x=>x?.match_json||x)
+      .filter(Boolean);
+
     return CLOUD_MATCHES;
-  }catch(e){console.warn("Shared match server unavailable:",e);return []}
+  }catch(e){
+    console.warn("Shared match server unavailable:",e);
+    return [];
+  }
 }
 async function adminCloud(method,body,id=""){
   const password=sessionStorage.getItem("nict_admin_password")||"";
-  const url=id?`${CLOUD_API}?id=${encodeURIComponent(id)}`:CLOUD_API;
-  const r=await fetch(url,{method,headers:{"Content-Type":"application/json","x-admin-password":password},body:body?JSON.stringify(body):undefined});
-  const data=await r.json().catch(()=>({}));
-  if(!r.ok)throw new Error(data.error||"Cloud request failed");
+  const url=id
+    ?`${CLOUD_API}?id=${encodeURIComponent(id)}`
+    :CLOUD_API;
+
+  const options={
+    method,
+    headers:{
+      "Content-Type":"application/json",
+      "x-admin-password":password
+    }
+  };
+
+  if(body!==null&&body!==undefined){
+    options.body=JSON.stringify(body);
+  }
+
+  const r=await fetch(url,options);
+  const text=await r.text();
+
+  let data={};
+  try{
+    data=text?JSON.parse(text):{};
+  }catch(e){
+    data={error:text};
+  }
+
+  if(!r.ok){
+    throw new Error(
+      data.error||
+      data.message||
+      text||
+      "Cloud request failed"
+    );
+  }
+
   return data;
 }
 
@@ -1670,30 +1726,93 @@ function parseFilename(name){
  return m?{a:st(m[1]),b:st(m[2])}:null;
 }
 async function uploadJSON(){
-  const f=document.getElementById("jsonFile").files[0],msg=document.getElementById("uploadMsg");
-  if(!f){msg.textContent="Choose a JSON file.";return}
+  const input=document.getElementById("jsonFile");
+  const msg=document.getElementById("uploadMsg");
+  const f=input?.files?.[0];
+
+  if(!f){
+    if(msg)msg.textContent="Choose a JSON file.";
+    return;
+  }
+
+  if(!/\.json$/i.test(f.name)){
+    if(msg)msg.textContent="Upload failed: please choose a .json file.";
+    return;
+  }
+
   try{
-    const d=JSON.parse(await f.text()),fn=parseFilename(f.name);
-    if(!Array.isArray(d.deliveries))throw new Error("JSON must contain a deliveries array.");
-    if(fn){d.team_a=fn.a;d.team_b=fn.b}
-    d.team_a=st(d.team_a||"");d.team_b=st(d.team_b||"");
-    if(!d.team_a||!d.team_b)throw new Error("Team names missing.");
-    d.file_name=f.name;d.match_id=d.match_id||f.name.replace(/\.json$/i,"");
-    d.status="upcoming";d.started_at=null;
-     d.points_table_enabled=false;
-     d.player_records_enabled=false;
-     d.rankings_enabled=false;
-     d.records_applied=false;
-    d.deliveries=d.deliveries.map(x=>({...x,
-      batsman_team:x.batsman_team||((Number(x.innings||1)%2===1)?d.team_a:d.team_b),
-      bowling_team:x.bowling_team||((Number(x.innings||1)%2===1)?d.team_b:d.team_a)
+    if(msg)msg.textContent="Reading JSON file...";
+
+    const d=JSON.parse(await f.text());
+    const fn=parseFilename(f.name);
+
+    if(!d||typeof d!=="object"||Array.isArray(d)){
+      throw new Error("Invalid match JSON.");
+    }
+
+    if(!Array.isArray(d.deliveries)){
+      throw new Error("JSON must contain a deliveries array.");
+    }
+
+    if(fn){
+      d.team_a=fn.a;
+      d.team_b=fn.b;
+    }
+
+    d.team_a=st(d.team_a||"");
+    d.team_b=st(d.team_b||"");
+
+    if(!d.team_a||!d.team_b){
+      throw new Error("Team names missing.");
+    }
+
+    d.file_name=f.name;
+    d.match_id=d.match_id||f.name.replace(/\.json$/i,"");
+
+    if(!d.match_id){
+      d.match_id="MATCH_"+Date.now();
+    }
+
+    d.status="upcoming";
+    d.started_at=null;
+    d.points_table_enabled=false;
+    d.player_records_enabled=false;
+    d.rankings_enabled=false;
+    d.records_applied=false;
+
+    d.deliveries=d.deliveries.map(x=>({
+      ...x,
+      batsman_team:x.batsman_team||
+        ((Number(x.innings||1)%2===1)?d.team_a:d.team_b),
+      bowling_team:x.bowling_team||
+        ((Number(x.innings||1)%2===1)?d.team_b:d.team_a)
     }));
-    d.events=d.events||[];
-    await adminCloud("POST",d);
+
+    d.events=Array.isArray(d.events)?d.events:[];
+
+    if(msg)msg.textContent="Uploading match to shared server...";
+
+    await adminCloud("POST",d,d.match_id);
+
     DATA.live_matches=await cloudMatches();
-    msg.textContent=`Uploaded to shared server: ${d.team_a} vs ${d.team_b}`;
+
+    localStorage.setItem(
+      "nict_uploaded_matches",
+      JSON.stringify(DATA.live_matches||[])
+    );
+
+    if(msg){
+      msg.textContent=
+        `Uploaded successfully: ${d.team_a} vs ${d.team_b}`;
+    }
+
+    input.value="";
     renderAdminMatches();
-  }catch(e){msg.textContent="Upload failed: "+e.message}
+
+  }catch(e){
+    console.error("Match upload failed:",e);
+    if(msg)msg.textContent="Upload failed: "+(e.message||"Unknown error");
+  }
 }
 async function useUploaded(i){
   const m=DATA.live_matches?.[i];if(!m)return;
@@ -1731,5 +1850,4 @@ async function deleteCurrentLiveMatch(i){
 async function deleteUploaded(i){return deleteCurrentLiveMatch(i)}
 
 loadData();
-
 
