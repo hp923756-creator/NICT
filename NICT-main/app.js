@@ -1464,9 +1464,18 @@ function adminPanel(){
    "Match controls and player-stat approval"
  )+
  `<div class="notice">
-   Admin controls: <b>Start Match</b>, <b>Rain</b>, <b>Suspend</b>,
+   Admin controls: <b>Upload Match</b>, <b>Start Match</b>, <b>Rain</b>, <b>Suspend</b>,
    <b>Resume Match</b>, <b>Update Stats of Player</b> and <b>Delete Match</b>.
    Player and team records update automatically when a match finishes.
+ </div>
+ <div class="section">
+   <h2>Upload Match JSON</h2>
+   <p class="muted">Upload a ball-by-ball JSON file. Team names can be in the file or in the filename (e.g. <code>GCET_vs_GLB.json</code>).</p>
+   <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px">
+     <input id="jsonFile" class="input" type="file" accept=".json,application/json">
+     <button class="btn" onclick="uploadJSON()">Upload Match</button>
+   </div>
+   <p id="uploadMsg" class="muted" style="margin-top:8px"></p>
  </div>
  <div class="section">
    <h2>Matches</h2>
@@ -1767,6 +1776,83 @@ function removeMatchLocally(matchId){
 }
 
 function saveUploadedMatches(local){localStorage.setItem("nict_uploaded_matches",JSON.stringify(local));DATA.live_matches=local}
+
+function parseFilename(name){
+  const clean=String(name||"").replace(/\.[^.]+$/,"");
+  const m=clean.match(/(.+?)_vs_(.+)$/i);
+  return m?{a:st(m[1]),b:st(m[2])}:null;
+}
+
+async function uploadJSON(){
+  const f=document.getElementById("jsonFile")?.files?.[0];
+  const msg=document.getElementById("uploadMsg");
+
+  if(sessionStorage.getItem("nict_admin")!=="true"){
+    if(msg)msg.textContent="Admin authentication required.";
+    return;
+  }
+
+  if(!f){
+    if(msg)msg.textContent="Choose a JSON file first.";
+    return;
+  }
+
+  if(msg)msg.textContent="Uploading...";
+
+  try{
+    const d=JSON.parse(await f.text());
+    const fn=parseFilename(f.name);
+
+    if(!Array.isArray(d.deliveries)){
+      throw new Error("JSON must contain a deliveries array.");
+    }
+
+    if(fn){
+      d.team_a=fn.a;
+      d.team_b=fn.b;
+    }
+
+    d.team_a=st(d.team_a||"");
+    d.team_b=st(d.team_b||"");
+
+    if(!d.team_a||!d.team_b){
+      throw new Error("Team names missing. Add team_a/team_b in JSON or use TeamA_vs_TeamB.json filename.");
+    }
+
+    d.file_name=f.name;
+    d.match_id=d.match_id||f.name.replace(/\.json$/i,"");
+    d.status="upcoming";
+    d.started_at=null;
+    d.points_table_enabled=false;
+    d.player_records_enabled=false;
+    d.rankings_enabled=false;
+    d.records_applied=false;
+    d.deliveries=d.deliveries.map(x=>({
+      ...x,
+      batsman_team:x.batsman_team||((Number(x.innings||1)%2===1)?d.team_a:d.team_b),
+      bowling_team:x.bowling_team||((Number(x.innings||1)%2===1)?d.team_b:d.team_a)
+    }));
+    d.events=d.events||[];
+
+    await adminCloud("POST",d);
+
+    const cloud=await cloudMatches();
+    if(Array.isArray(cloud)){
+      DATA.live_matches=cloud;
+      localStorage.setItem(
+        "nict_uploaded_matches",
+        JSON.stringify(cloud)
+      );
+    }
+
+    if(msg)msg.textContent=`Uploaded: ${d.team_a} vs ${d.team_b}`;
+    document.getElementById("jsonFile").value="";
+    renderAdminMatches();
+  }catch(e){
+    if(msg)msg.textContent="Upload failed: "+e.message;
+  }
+}
+
 async function useUploaded(i){
   const m=DATA.live_matches?.[i];if(!m)return;
   try{
@@ -1828,8 +1914,5 @@ async function deleteUploaded(i){
 }
 
 loadData();
-
-
-
 
 
