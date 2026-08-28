@@ -48,6 +48,92 @@ async function cloudMatches(){
     return null;
   }
 }
+
+async function cloudMatchById(matchId){
+  const id=String(matchId||"").trim();
+  if(!id)return null;
+  try{
+    const r=await fetch(
+      `${CLOUD_API}?id=${encodeURIComponent(id)}`,
+      {cache:"no-store"}
+    );
+    if(!r.ok)throw new Error(await r.text()||`HTTP ${r.status}`);
+    const row=await r.json();
+    if(!row)return null;
+    return row.match_json||row;
+  }catch(e){
+    console.warn("Could not load shared match:",e);
+    return null;
+  }
+}
+
+function getUrlMatchId(){
+  return new URLSearchParams(location.search).get("match")||"";
+}
+
+function sharedLiveLink(matchId){
+  const id=String(matchId||"").trim();
+  const base=(location.origin+location.pathname).replace(/\/$/,"");
+  return `${base}?match=${encodeURIComponent(id)}`;
+}
+
+function setUrlMatchId(matchId){
+  const id=String(matchId||"").trim();
+  if(!id)return;
+  const url=new URL(location.href);
+  url.searchParams.set("match",id);
+  history.replaceState(null,"",url);
+}
+
+async function copyLiveLink(matchId){
+  const link=sharedLiveLink(matchId);
+  try{
+    await navigator.clipboard.writeText(link);
+    alert("Live link copied!\n\nAnyone can open this scorecard on any phone, tablet, or computer.");
+  }catch(e){
+    prompt("Copy this live link to share:",link);
+  }
+}
+
+function mergeMatchIntoList(match){
+  if(!match?.match_id)return;
+  const id=String(match.match_id);
+  const list=Array.isArray(DATA.live_matches)?[...DATA.live_matches]:[];
+  const idx=list.findIndex(x=>String(x.match_id||x.id||"")===id);
+  if(idx>=0)list[idx]={...list[idx],...match};
+  else list.unshift(match);
+  DATA.live_matches=list;
+  localStorage.setItem("nict_uploaded_matches",JSON.stringify(list));
+}
+
+async function ensureSharedMatchLoaded(){
+  const id=getUrlMatchId();
+  if(!id)return false;
+  if(findMatchById(id))return true;
+  const remote=await cloudMatchById(id);
+  if(!remote)return false;
+  mergeMatchIntoList(remote);
+  return true;
+}
+
+let sharedLinkBootstrapped=false;
+
+function bootstrapSharedLink(){
+  const id=getUrlMatchId();
+  if(!id)return;
+  localStorage.setItem("nict_active_match_id",id);
+  if(!sharedLinkBootstrapped){
+    view="live";
+    sharedLinkBootstrapped=true;
+  }
+}
+
+async function refreshSharedMatchFromCloud(){
+  const id=getUrlMatchId()||localStorage.getItem("nict_active_match_id")||"";
+  if(!id)return;
+  const remote=await cloudMatchById(id);
+  if(remote)mergeMatchIntoList(remote);
+}
 function applyCloudMatches(cloud){
   if(!Array.isArray(cloud))return false;
   DATA.live_matches=cloud;
@@ -80,10 +166,29 @@ const LOGOS={GCET:"assets/logos/GCET.png",GLB:"assets/logos/GLB.png",ABES:"asset
 
 function esc(x){return String(x??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 function jsArg(v){return JSON.stringify(String(v??""))}
+function safeParseJSON(raw,fallback=null){
+  try{
+    return JSON.parse(raw);
+  }catch{
+    return fallback;
+  }
+}
+function stopLiveTimer(){
+  if(liveTimer){
+    clearInterval(liveTimer);
+    liveTimer=null;
+  }
+}
 function st(x){return TEAM_MAP[String(x||"").trim()]||String(x||"").trim()}
 function fmt(x){return Number(x||0).toLocaleString("en-IN")}
 function logo(t,cls="team-logo"){return `<img class="${cls}" src="${LOGOS[st(t)]||""}" alt="${esc(st(t))}">`}
-function navigate(v){view=v;closeMenu();render();scrollTo(0,0)}
+function navigate(v){
+  if(v!=="live")stopLiveTimer();
+  view=v;
+  closeMenu();
+  render();
+  scrollTo(0,0);
+}
 function closeMenu(){document.getElementById("drawer")?.classList.remove("open");document.getElementById("overlay")?.classList.remove("show")}
 function head(title,sub=""){return `<div class="page-head"><div><h1>${esc(title)}</h1>${sub?`<div class="muted">${esc(sub)}</div>`:""}</div></div>`}
 function table(h,rows){return `<div class="table-wrap"><table class="table"><thead><tr>${h.map(x=>`<th>${x}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody></table></div>`}
@@ -106,13 +211,13 @@ function snapshotBaselineStats(){
 
 function restoreSavedStats(){
   const saved={
-    career_records:JSON.parse(localStorage.getItem("nict_career_records")||"null"),
-    players_format:JSON.parse(localStorage.getItem("nict_players_format")||"null"),
-    batting_rankings:JSON.parse(localStorage.getItem("nict_batting_rankings")||"null"),
-    bowling_rankings:JSON.parse(localStorage.getItem("nict_bowling_rankings")||"null"),
-    ratings:JSON.parse(localStorage.getItem("nict_ratings")||"null"),
-    opponent_records:JSON.parse(localStorage.getItem("nict_opponent_records")||"null"),
-    team_records:JSON.parse(localStorage.getItem("nict_team_records")||"null")
+    career_records:safeParseJSON(localStorage.getItem("nict_career_records"),null),
+    players_format:safeParseJSON(localStorage.getItem("nict_players_format"),null),
+    batting_rankings:safeParseJSON(localStorage.getItem("nict_batting_rankings"),null),
+    bowling_rankings:safeParseJSON(localStorage.getItem("nict_bowling_rankings"),null),
+    ratings:safeParseJSON(localStorage.getItem("nict_ratings"),null),
+    opponent_records:safeParseJSON(localStorage.getItem("nict_opponent_records"),null),
+    team_records:safeParseJSON(localStorage.getItem("nict_team_records"),null)
   };
 
   for(const [key,value] of Object.entries(saved)){
@@ -171,22 +276,42 @@ async function loadData(){
  snapshotBaselineStats();
  restoreSavedStats();
 
- const local=JSON.parse(localStorage.getItem("nict_uploaded_matches")||"[]");
- DATA.live_matches=local;
+ const local=safeParseJSON(localStorage.getItem("nict_uploaded_matches"),[]);
+ DATA.live_matches=Array.isArray(local)?local:[];
  loadSavedPerformance();
  try{
    const cloud=await cloudMatches();
    if(cloud!==null)applyCloudMatches(cloud);
  }catch(e){console.warn("Cloud initial load failed",e)}
 
+ await ensureSharedMatchLoaded();
  await refreshStatsFromServer({silent:true});
- selectSharedMatchFromURL();
+ bootstrapSharedLink();
  startCloudPolling();
+ startSharedLinkListeners();
  render();
 }
 
+function startSharedLinkListeners(){
+ if(window.__nictSharedListeners)return;
+ window.__nictSharedListeners=true;
+
+ document.addEventListener("visibilitychange",()=>{
+   if(document.visibilityState!=="visible")return;
+   refreshSharedMatchFromCloud().then(()=>{
+     if(view==="live")renderLive(getActiveMatch());
+   });
+ });
+
+ window.addEventListener("focus",()=>{
+   refreshSharedMatchFromCloud().then(()=>{
+     if(view==="live")renderLive(getActiveMatch());
+   });
+ });
+}
+
 let STATS_REFRESHED_FOR=new Set(
-  JSON.parse(localStorage.getItem("nict_stats_refreshed_for")||"[]")
+  safeParseJSON(localStorage.getItem("nict_stats_refreshed_for"),[])||[]
 );
 
 function saveStatsRefreshedFor(){
@@ -204,6 +329,15 @@ function startCloudPolling(){
      if(cloud!==null){
        const prev=JSON.stringify(DATA.live_matches||[]);
        applyCloudMatches(cloud);
+
+       const urlId=getUrlMatchId();
+       if(urlId && !findMatchById(urlId)){
+         await ensureSharedMatchLoaded();
+       }else if(view==="live"){
+         await refreshSharedMatchFromCloud();
+       }
+
+       bootstrapSharedLink();
 
        const newlyCompleted=cloud.filter(m=>{
          const id=String(m.match_id||"");
@@ -234,22 +368,11 @@ function startCloudPolling(){
  },3000);
 }
 
-function selectSharedMatchFromURL(){
-  const id=new URLSearchParams(location.search).get("match");
-  if(!id)return;
-  const idx=(DATA.live_matches||[]).findIndex(x=>String(x.match_id||x.id||"")===String(id));
-  if(idx>=0){
-    localStorage.setItem("nict_active_match_id",String(id));
-    localStorage.setItem("nict_active_match",String(idx));
-    view="live";
-  }
-}
 function render(){
   if(!app)return;
-  selectSharedMatchFromURL();
  if(view==="home")return home(); if(view==="live")return live(); if(view==="matches")return matches();
  if(view==="teams")return teamsPage(); if(view==="players")return playersPage(); if(view==="player")return playerPage();
- if(view==="rankings"||view==="playerRankings")return battingRankings();
+ if(view==="rankings"||view==="playerRankings")return rankingsPage();
  if(view==="batRankings")return battingRankings(); if(view==="bowlRankings")return bowlingRankings(); if(view==="allRoundRankings")return allRoundRankings();
  if(view==="records")return records(); if(view==="careerRecords")return careerRecords(); if(view==="centuryRecords")return leader("hundreds","Most Centuries");
  if(view==="fiftyRecords")return leader("fifty_plus","Most 50+ Scores"); if(view==="sixRecords")return leader("sixes","Most Sixes");
@@ -271,30 +394,60 @@ function home(){
 }
 function matchHero(m){
  const a=st(m.team_a),b=st(m.team_b);
- return `<div class="scorehero"><div class="match-banner"><div><div class="meta">${esc(m.format||"Match")} · ${esc(m.match_id||"")}</div><h2>${esc(a)} vs ${esc(b)}</h2><div class="meta">${esc(m.venue||"Noida Intercollege Cricket Ground")}</div></div><div class="team-logos">${logo(a)}${logo(b)}</div></div><div style="margin-top:15px"><button class="btn" onclick="navigate('live')">Open Live Scorecard</button> <button class="btn secondary" onclick="navigator.clipboard?.writeText(location.origin+location.pathname+'?match='+encodeURIComponent(m.match_id||''))">Copy Live Link</button></div></div>`
+ return `<div class="scorehero"><div class="match-banner"><div><div class="meta">${esc(m.format||"Match")} · ${esc(m.match_id||"")}</div><h2>${esc(a)} vs ${esc(b)}</h2><div class="meta">${esc(m.venue||"Noida Intercollege Cricket Ground")}</div></div><div class="team-logos">${logo(a)}${logo(b)}</div></div><div style="margin-top:15px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn" onclick="openSharedLive(${jsArg(m.match_id)})">Open Live Scorecard</button><button class="btn secondary" onclick="copyLiveLink(${jsArg(m.match_id)})">Copy Live Link</button></div></div>`
+}
+function openSharedLive(matchId){
+  setUrlMatchId(matchId);
+  localStorage.setItem("nict_active_match_id",String(matchId));
+  view="live";
+  render();
 }
 function matches(){
- const rows=(DATA.live_matches||[]).map((m,i)=>`<tr><td>${esc(m.match_id||"MATCH-"+(i+1))}</td><td>${esc(m.format||"")}</td><td><b>${esc(st(m.team_a))}</b> vs <b>${esc(st(m.team_b))}</b></td><td><span class="pill ${m.status==="completed"?"":"live-pill"}">${esc(m.status||"Replay")}</span></td><td><button class="btn" onclick="startLive(${i})">Watch</button></td></tr>`);
- app.innerHTML=head("Matches","Every uploaded match is normalized to short team names")+table(["Match","Format","Teams","Status",""],rows);
+ const rows=(DATA.live_matches||[]).map((m,i)=>`<tr><td>${esc(m.match_id||"MATCH-"+(i+1))}</td><td>${esc(m.format||"")}</td><td><b>${esc(st(m.team_a))}</b> vs <b>${esc(st(m.team_b))}</b></td><td><span class="pill ${m.status==="completed"?"":"live-pill"}">${esc(m.status||"Replay")}</span></td><td><button class="btn" onclick="openSharedLive(${jsArg(m.match_id)})">Watch</button> <button class="btn secondary" onclick="copyLiveLink(${jsArg(m.match_id)})">Copy Link</button></td></tr>`);
+ app.innerHTML=head("Matches","Share the live link — everyone sees the same scorecard in real time")+table(["Match","Format","Teams","Status","Actions"],rows);
 }
-function startLive(i){const m=DATA.live_matches?.[i];if(m)localStorage.setItem("nict_active_match_id",String(m.match_id||m.file_name||""));localStorage.setItem("nict_active_match",String(i));view="live";render()}
+function startLive(i){
+  const m=DATA.live_matches?.[i];
+  if(m)openSharedLive(m.match_id||m.file_name||"");
+}
 
 function getActiveMatch(){
- const id=localStorage.getItem("nict_active_match_id")||new URLSearchParams(location.search).get("match")||"";
+ const urlId=getUrlMatchId();
+ const id=urlId||localStorage.getItem("nict_active_match_id")||"";
  if(id){
-   const byId=(DATA.live_matches||[]).find(x=>String(x.match_id||x.id||"")===String(id));
+   const byId=findMatchById(id);
    if(byId)return byId;
  }
- const i=Number(localStorage.getItem("nict_active_match")||0);
- return DATA.live_matches?.[i]||DATA.live_matches?.[0];
+ return DATA.live_matches?.[0]||null;
 }
 
-let replayStart=Number(localStorage.getItem("nict_replay_start")||0);
+let replayStart=0;
 function live(){
- const m=getActiveMatch(); if(!m){app.innerHTML=head("Live Scores")+"<div class='card empty'>No match loaded.</div>";return}
- if(!replayStart){replayStart=Date.now();localStorage.setItem("nict_replay_start",String(replayStart))}
+ const m=getActiveMatch();
+ if(!m){
+   const pendingId=getUrlMatchId();
+   app.innerHTML=head("Live Scores")+
+   (pendingId
+     ?`<div class="card empty">Loading shared match <b>${esc(pendingId)}</b> from the server…</div>
+        <div style="margin-top:12px"><button class="btn" onclick="ensureSharedMatchLoaded().then(()=>render())">Retry</button></div>`
+     :"<div class='card empty'>No match loaded. Open a shared link or choose a match from the Matches page.</div>");
+   if(pendingId)ensureSharedMatchLoaded().then(found=>{if(found)render()});
+   return;
+ }
  if(!liveTimer)liveTimer=setInterval(()=>{if(view==="live"){const active=getActiveMatch();if(active)renderLive(active)}},1000);
  renderLive(m);
+}
+
+function findMatchById(matchId){
+  return (DATA.live_matches||[]).find(
+    x=>String(x.match_id||x.id||"")===String(matchId||"")
+  );
+}
+
+function findMatchIndex(matchId){
+  return (DATA.live_matches||[]).findIndex(
+    x=>String(x.match_id||x.id||"")===String(matchId||"")
+  );
 }
 function matchTimings(m){
   const rules=m?.rules||{};
@@ -456,6 +609,7 @@ function renderLive(raw){
   const testSession=testSessionForDelivery(prepared,Math.max(0,prepared.length-1),m);
   const testDayLabel=testSession?` · DAY ${testSession.day}`:"";
   if(resultText)statusLabel="RESULT";
+  else if(finished)statusLabel="RESULT";
   else if(matchEvent)statusLabel=statusLabelForEvent(matchEvent,statusLabel);
 
   const eventText=resultText||(matchEvent?eventLabel(matchEvent):"");
@@ -465,6 +619,10 @@ function renderLive(raw){
     `${a} vs ${b}`,
     `${m.format||"Match"} · ${m.match_id||""}`
   )+
+  `<div class="notice" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between">
+    <span>🌐 <b>Live on all devices</b> · synced every 3 seconds from the shared server</span>
+    <button class="btn secondary" onclick="copyLiveLink(${jsArg(m.match_id)})">Copy Live Link</button>
+  </div>`+
   `<div class="notice"><b>Toss:</b> ${esc(tossSummary(m))}</div>`+
   breakBanner+
   (eventText && !breakBanner
@@ -584,7 +742,14 @@ function statusLabelForEvent(event,defaultLabel="LIVE"){
 }
 
 function breakBannerHTML(event){
- if(!event||event.remaining===undefined)return "";
+ if(!event)return "";
+ if(event.type==="rain"||event.type==="suspend"||event.type==="waiting_start"){
+   return `<div class="notice break-banner" style="text-align:center;padding:18px">
+     <div class="meta">${esc(statusLabelForEvent(event))}</div>
+     <div style="margin-top:8px">${esc(eventLabel(event))}</div>
+   </div>`;
+ }
+ if(event.remaining===undefined)return "";
  return `<div class="notice break-banner" style="text-align:center;padding:18px">
    <div class="meta">${esc(statusLabelForEvent(event))}</div>
    <div class="big" style="font-size:2rem;margin-top:8px">${formatCountdown(event.remaining)}</div>
@@ -610,6 +775,17 @@ function testSessionForDelivery(ds,index,m){
     day:Math.floor(legal/Math.max(1,Number(schedule.overs_per_day||80)))+1,
     legal
   };
+}
+
+function getActiveAdminHold(m,ballIndex){
+  const events=Array.isArray(m?.events)?m.events:[];
+  for(const e of events){
+    if(e.resumed)continue;
+    if((e.type==="rain"||e.type==="suspend")&&Number(e.afterBall)===Number(ballIndex)){
+      return e.type;
+    }
+  }
+  return null;
 }
 
 function getReplayState(ds,elapsed,m){
@@ -656,6 +832,14 @@ function getReplayState(ds,elapsed,m){
   for(let i=0;i<ds.length;i++){
     const d=ds[i];
     const innings=Number(d.innings||1);
+
+    const adminHold=getActiveAdminHold(m,i);
+    if(adminHold){
+      return {
+        idx:i,
+        event:{type:adminHold,remaining:0}
+      };
+    }
 
     if(previousInnings!==null&&innings!==previousInnings){
       if(elapsed<time+timings.inningsBreak){
@@ -1149,6 +1333,14 @@ function playerPage(){
 }
 function record(a,b){return `<div class="record-item"><span>${a}</span><b>${b}</b></div>`}
 
+function rankingsPage(){
+  app.innerHTML=head("Rankings","Format-specific player rankings")+
+  `<div class="grid">
+    <div class="card"><h3>Batting Rankings</h3><button class="btn" onclick="navigate('batRankings')">Open</button></div>
+    <div class="card"><h3>Bowling Rankings</h3><button class="btn" onclick="navigate('bowlRankings')">Open</button></div>
+    <div class="card"><h3>All-Rounder Rankings</h3><button class="btn" onclick="navigate('allRoundRankings')">Open</button></div>
+  </div>`;
+}
 function formatPicker(){return `<label class="format-picker">Format <select id="rankingFormat" class="input"><option>T20</option><option>ODI</option><option>Test</option></select></label>`}
 function rankingRows(arr){return arr.filter(x=>x.format===rankingFormat).sort((a,b)=>Number(b.rating)-Number(a.rating)||a.player.localeCompare(b.player)).map((x,i)=>`<tr><td>${i+1}</td><td>${playerLink(x.player)}</td><td>${x.short_team}</td><td>${x.format}</td><td>${x.rating}</td></tr>`)}
 function updateRankingFormat(){rankingFormat=document.getElementById("rankingFormat").value;render()}
@@ -1169,7 +1361,23 @@ function careerRecords(){
    document.querySelectorAll(".table tbody tr").forEach(r=>r.style.display=r.innerText.toLowerCase().includes(q)?"":"none")
  };
 }
-function catchesPage(){app.innerHTML=head("Most Catches","Fielding leaderboard");app.innerHTML+=table(["Rank","Player","Team","Catches","Stumpings","Run-outs"],DATA.catches.map(x=>`<tr><td>${x.catch_rank}</td><td>${playerLink(x.player)}</td><td>${x.short_team}</td><td>${x.total_catches}</td><td>${x.total_stumpings}</td><td>${x.total_runouts}</td></tr>`))}
+function catchesPage(){
+  const fromCareer=(DATA.career_records||[])
+    .filter(p=>Number(p.catches||0)>0)
+    .sort((a,b)=>Number(b.catches)-Number(a.catches)||a.name.localeCompare(b.name))
+    .map((p,i)=>({
+      catch_rank:i+1,
+      player:p.name,
+      short_team:p.team||p.short_team||"",
+      total_catches:p.catches||0,
+      total_stumpings:p.stumpings||0,
+      total_runouts:p.runouts||0
+    }));
+  const rows=(hasStatsRows(DATA.catches)?DATA.catches:fromCareer);
+  app.innerHTML=head("Most Catches","Fielding leaderboard")+
+  table(["Rank","Player","Team","Catches","Stumpings","Run-outs"],
+    rows.map(x=>`<tr><td>${x.catch_rank||""}</td><td>${playerLink(x.player)}</td><td>${esc(x.short_team||"")}</td><td>${x.total_catches||0}</td><td>${x.total_stumpings||0}</td><td>${x.total_runouts||0}</td></tr>`));
+}
 function deriveCompletedMatchResult(m){
   const ds=Array.isArray(m?.deliveries)?m.deliveries:[];
   const teams=[st(m?.team_a),st(m?.team_b)];
@@ -1347,8 +1555,31 @@ function records(){app.innerHTML=head("Records","Choose an individual record cat
 ["Most Catches","catchRecords"],
 ["Points Table 2026","pointTable"]
 ].map(x=>`<div class="card"><h3>${x[0]}</h3><button class="btn" onclick="navigate('${x[1]}')">Open</button></div>`).join("")}</div>`}
-function headToHead(){const ts=Object.keys(DATA.squads||{});app.innerHTML=head("Head to Head","Opponent records update automatically after each completed match")+`<div class="tabs">${ts.map(t=>`<button onclick="h2h('${t}')">${t}</button>`).join("")}</div><div id="h2h" class="card empty">Select a team.</div>`}
-function h2h(t){const rows=DATA.opponent_records.filter(x=>x.short_team===t||x.team===t).slice(0,50);document.getElementById("h2h").innerHTML=rows.length?table(Object.keys(rows[0]).slice(0,9),rows.map(x=>`<tr>${Object.values(x).slice(0,9).map(v=>`<td>${esc(v)}</td>`).join("")}</tr>`)):"No records found."}
+function headToHead(){
+  const teams=["GCET","GLB","ABES","JSS","KCC"];
+  app.innerHTML=head("Head to Head","Team vs team records from completed matches")+
+  `<div class="tabs">${teams.map(t=>`<button onclick="h2h(${jsArg(t)})">${esc(t)}</button>`).join("")}</div>
+  <div id="h2h" class="card empty">Select a team.</div>`;
+}
+function h2h(teamCode){
+  const code=st(teamCode);
+  const rows=(DATA.opponent_records||[]).filter(x=>{
+    const a=st(x.team||x.short_team||"");
+    const b=st(x.opponent||"");
+    return a===code||b===code;
+  }).map(x=>({
+    team:st(x.team||""),
+    opponent:st(x.opponent||""),
+    matches:x.matches||0,
+    wins:x.wins||0,
+    losses:x.losses||0
+  }));
+
+  document.getElementById("h2h").innerHTML=rows.length
+    ?table(["Team","Opponent","Matches","Wins","Losses"],
+      rows.map(x=>`<tr><td>${esc(x.team)}</td><td>${esc(x.opponent)}</td><td>${x.matches}</td><td>${x.wins}</td><td>${x.losses}</td></tr>`))
+    :"No head-to-head records yet. Complete a live match to populate this table.";
+}
 function stats(){app.innerHTML=head("Stats Explorer","Use the menu to move between format rankings, career records and opponent records")+`<div class="grid"><div class="card"><h3>Batting</h3><p>Runs · average · SR · 100s · 50+ · 4s · 6s</p><button class="btn" onclick="navigate('batRankings')">Open</button></div><div class="card"><h3>Bowling</h3><p>Overs · economy · wickets · bowling rating</p><button class="btn" onclick="navigate('bowlRankings')">Open</button></div><div class="card"><h3>Fielding</h3><p>Catches · stumpings · run-outs</p><button class="btn" onclick="navigate('catchRecords')">Open</button></div><div class="card"><h3>Player Career</h3><p>Separate Test, ODI and T20 records.</p><button class="btn" onclick="navigate('careerRecords')">Open</button></div></div>`}
 
 
@@ -1611,7 +1842,8 @@ function adminPanel(){
  `<div class="notice">
    Admin controls: <b>Upload Match</b>, <b>Start Match</b>, <b>Rain</b>, <b>Suspend</b>,
    <b>Resume Match</b>, <b>Update Stats of Player</b> and <b>Delete Match</b>.
-   Player and team records update automatically when a match finishes.
+   Player and team records update automatically after a live match finishes.
+   Set Vercel <code>ADMIN_PASSWORD=@@098</code> for upload/start/delete to work.
  </div>
  <div class="section">
    <h2>Upload Match JSON</h2>
@@ -1667,8 +1899,8 @@ async function rebuildCareerFromCompletedMatches(){
   await refreshStatsFromServer({silent:false});
 }
 
-async function updatePlayerStats(index){
-  const m=DATA.live_matches?.[index];
+async function updatePlayerStats(matchId){
+  const m=findMatchById(matchId);
   if(!m)return;
 
   if(sessionStorage.getItem("nict_admin")!=="true"){
@@ -1708,7 +1940,8 @@ async function updatePlayerStats(index){
     completed_at:m.completed_at||now,
     player_records_enabled:true,
     player_stats_approved:true,
-    player_stats_approved_at:now
+    player_stats_approved_at:now,
+    points_table_enabled:true
   };
 
   try{
@@ -1754,36 +1987,42 @@ function renderAdminMatches(){
         </label>
 
         <button class="btn"
-          onclick="addMatchEvent(${i},'rain')">
+          onclick="addMatchEvent(${jsArg(m.match_id)},'rain')">
           Rain
         </button>
 
         <button class="btn"
-          onclick="addMatchEvent(${i},'suspend')">
+          onclick="addMatchEvent(${jsArg(m.match_id)},'suspend')">
           Suspend Match
         </button>
 
         <button class="btn secondary"
-          onclick="resumeMatch(${i})">
+          onclick="resumeMatch(${jsArg(m.match_id)})">
           Resume Match
         </button>
       </div>
 
       <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn"
-          onclick="useUploaded(${i})"
+          onclick="useUploaded(${jsArg(m.match_id)})"
           ${started||finished?"disabled":""}>
           Start Match
         </button>
 
         <button class="btn"
-          onclick="updatePlayerStats(${i})"
+          onclick="updatePlayerStats(${jsArg(m.match_id)})"
           ${finished?"":"disabled"}>
           Update Stats of Player
         </button>
 
+        <button class="btn secondary"
+          onclick="copyLiveLink(${jsArg(m.match_id)})"
+          ${started||finished?"":"disabled"}>
+          Copy Live Link
+        </button>
+
         <button class="btn danger"
-          onclick="deleteUploaded(${i})">
+          onclick="deleteUploaded(${jsArg(m.match_id)})">
           Delete Match
         </button>
       </div>
@@ -1803,8 +2042,9 @@ function eventBallOptions(m){
   ).join("");
 }
 
-async function addMatchEvent(index,type){
-  const m=DATA.live_matches?.[index];
+async function addMatchEvent(matchId,type){
+  const index=findMatchIndex(matchId);
+  const m=findMatchById(matchId);
   if(!m)return;
 
   if(sessionStorage.getItem("nict_admin")!=="true"){
@@ -1841,8 +2081,8 @@ async function addMatchEvent(index,type){
   }
 }
 
-async function resumeMatch(index){
-  const m=DATA.live_matches?.[index];
+async function resumeMatch(matchId){
+  const m=findMatchById(matchId);
   if(!m)return;
 
   if(sessionStorage.getItem("nict_admin")!=="true"){
@@ -1885,7 +2125,7 @@ function removeMatchLocally(matchId){
     JSON.stringify(DATA.live_matches)
   );
 
-  const completed=JSON.parse(localStorage.getItem("nict_completed_matches")||"[]");
+  const completed=safeParseJSON(localStorage.getItem("nict_completed_matches"),[]);
   localStorage.setItem(
     "nict_completed_matches",
     JSON.stringify(
@@ -1900,8 +2140,7 @@ function removeMatchLocally(matchId){
   if(String(activeId)===id){
     localStorage.removeItem("nict_active_match_id");
     localStorage.removeItem("nict_active_match");
-    localStorage.removeItem("nict_replay_start");
-    replayStart=0;
+    stopLiveTimer();
     if(view==="live")view="matches";
   }
 }
@@ -1985,24 +2224,30 @@ async function uploadJSON(){
   }
 }
 
-async function useUploaded(i){
-  const m=DATA.live_matches?.[i];if(!m)return;
+async function useUploaded(matchId){
+  const m=findMatchById(matchId);
+  if(!m)return;
+
+  if(sessionStorage.getItem("nict_admin")!=="true"){
+    alert("Admin authentication required.");
+    return;
+  }
+
   try{
     const now=new Date().toISOString();
     const updated={...m,status:"live",started_at:now};
     await adminCloud("POST",updated,m.match_id);
     const cloud=await cloudMatches();
     if(cloud!==null)applyCloudMatches(cloud);
-    const fresh=DATA.live_matches.find(x=>String(x.match_id)===String(m.match_id))||updated;
+    const fresh=findMatchById(m.match_id)||updated;
+    setUrlMatchId(fresh.match_id);
     localStorage.setItem("nict_active_match_id",String(fresh.match_id));
-    localStorage.removeItem("nict_replay_start");
-    replayStart=0;
     view="live";
     render();
   }catch(e){alert("Could not start shared live match: "+e.message)}
 }
-async function deleteUploaded(i){
-  const m=DATA.live_matches?.[i];
+async function deleteUploaded(matchId){
+  const m=findMatchById(matchId);
   if(!m)return;
 
   if(sessionStorage.getItem("nict_admin")!=="true"){
@@ -2073,10 +2318,14 @@ function initApp(){
     addMatchEvent,
     resumeMatch,
     startLive,
+    openSharedLive,
+    copyLiveLink,
+    ensureSharedMatchLoaded,
     h2h,
     updateRankingFormat,
     updateRecordFormat,
-    rebuildCareerFromCompletedMatches
+    rebuildCareerFromCompletedMatches,
+    rankingsPage
   });
 
   loadData();
@@ -2087,6 +2336,7 @@ if(document.readyState==="loading"){
 }else{
   initApp();
 }
+
 
 
 
