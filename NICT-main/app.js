@@ -91,7 +91,7 @@ async function loadData(){
  loadSavedPerformance();
  try{
    const cloud=await cloudMatches();
-   if(Array.isArray(cloud)&&cloud.length){
+   if(Array.isArray(cloud)){
      DATA.live_matches=cloud;
      localStorage.setItem("nict_uploaded_matches",JSON.stringify(cloud));
    }
@@ -117,7 +117,7 @@ function startCloudPolling(){
  window.__nictCloudPoll=setInterval(async()=>{
    try{
      const cloud=await cloudMatches();
-     if(Array.isArray(cloud)&&cloud.length){
+     if(Array.isArray(cloud)){
        const prev=JSON.stringify(DATA.live_matches||[]);
        DATA.live_matches=cloud;
        localStorage.setItem("nict_uploaded_matches",JSON.stringify(cloud));
@@ -1732,38 +1732,41 @@ async function resumeMatch(index){
   }
 }
 
+function removeMatchLocally(matchId){
+  const id=String(matchId||"");
+  if(!id)return;
+
+  DATA.live_matches=(DATA.live_matches||[]).filter(
+    m=>String(m.match_id||m.id||"")!==id
+  );
+
+  localStorage.setItem(
+    "nict_uploaded_matches",
+    JSON.stringify(DATA.live_matches)
+  );
+
+  const completed=JSON.parse(localStorage.getItem("nict_completed_matches")||"[]");
+  localStorage.setItem(
+    "nict_completed_matches",
+    JSON.stringify(
+      completed.filter(key=>!String(key).includes(id))
+    )
+  );
+
+  STATS_REFRESHED_FOR.delete(id);
+  saveStatsRefreshedFor();
+
+  const activeId=localStorage.getItem("nict_active_match_id");
+  if(String(activeId)===id){
+    localStorage.removeItem("nict_active_match_id");
+    localStorage.removeItem("nict_active_match");
+    localStorage.removeItem("nict_replay_start");
+    replayStart=0;
+    if(view==="live")view="matches";
+  }
+}
+
 function saveUploadedMatches(local){localStorage.setItem("nict_uploaded_matches",JSON.stringify(local));DATA.live_matches=local}
-function parseFilename(name){
- const clean=name.replace(/\.[^.]+$/,"");
- const m=clean.match(/(.+?)_vs_(.+)$/i);
- return m?{a:st(m[1]),b:st(m[2])}:null;
-}
-async function uploadJSON(){
-  const f=document.getElementById("jsonFile").files[0],msg=document.getElementById("uploadMsg");
-  if(!f){msg.textContent="Choose a JSON file.";return}
-  try{
-    const d=JSON.parse(await f.text()),fn=parseFilename(f.name);
-    if(!Array.isArray(d.deliveries))throw new Error("JSON must contain a deliveries array.");
-    if(fn){d.team_a=fn.a;d.team_b=fn.b}
-    d.team_a=st(d.team_a||"");d.team_b=st(d.team_b||"");
-    if(!d.team_a||!d.team_b)throw new Error("Team names missing.");
-    d.file_name=f.name;d.match_id=d.match_id||f.name.replace(/\.json$/i,"");
-    d.status="upcoming";d.started_at=null;
-     d.points_table_enabled=false;
-     d.player_records_enabled=false;
-     d.rankings_enabled=false;
-     d.records_applied=false;
-    d.deliveries=d.deliveries.map(x=>({...x,
-      batsman_team:x.batsman_team||((Number(x.innings||1)%2===1)?d.team_a:d.team_b),
-      bowling_team:x.bowling_team||((Number(x.innings||1)%2===1)?d.team_b:d.team_a)
-    }));
-    d.events=d.events||[];
-    await adminCloud("POST",d);
-    DATA.live_matches=await cloudMatches();
-    msg.textContent=`Uploaded to shared server: ${d.team_a} vs ${d.team_b}`;
-    renderAdminMatches();
-  }catch(e){msg.textContent="Upload failed: "+e.message}
-}
 async function useUploaded(i){
   const m=DATA.live_matches?.[i];if(!m)return;
   try{
@@ -1784,38 +1787,49 @@ async function deleteUploaded(i){
     return;
   }
 
+  const matchId=String(m.match_id||"");
+
   if(!confirm(
-    `Delete ${st(m.team_a)} vs ${st(m.team_b)}?\n\nThis removes the match from the server and recalculates player and team records.`
+    `Delete ${st(m.team_a)} vs ${st(m.team_b)}?\n\nThis removes the uploaded match from admin, matches list, and server, then recalculates player and team records.`
   ))return;
+
+  removeMatchLocally(matchId);
+  renderAdminMatches();
+  if(view!=="admin")render();
 
   try{
     await adminCloud("DELETE",null,m.match_id);
 
-    const activeId=localStorage.getItem("nict_active_match_id");
-    if(String(activeId)===String(m.match_id)){
-      localStorage.removeItem("nict_active_match_id");
-      localStorage.removeItem("nict_active_match");
-      if(view==="live")view="matches";
+    const cloud=await cloudMatches();
+    if(Array.isArray(cloud)){
+      DATA.live_matches=cloud;
+      localStorage.setItem(
+        "nict_uploaded_matches",
+        JSON.stringify(cloud)
+      );
     }
-
-    STATS_REFRESHED_FOR.delete(String(m.match_id));
-    saveStatsRefreshedFor();
-
-    DATA.live_matches=await cloudMatches();
-    localStorage.setItem(
-      "nict_uploaded_matches",
-      JSON.stringify(DATA.live_matches||[])
-    );
 
     await refreshStatsFromServer({silent:true});
     renderAdminMatches();
     if(view!=="admin")render();
   }catch(e){
     alert("Delete failed: "+e.message);
+    const cloud=await cloudMatches().catch(()=>[]);
+    if(Array.isArray(cloud)){
+      DATA.live_matches=cloud;
+      localStorage.setItem(
+        "nict_uploaded_matches",
+        JSON.stringify(cloud)
+      );
+    }
+    renderAdminMatches();
+    if(view!=="admin")render();
   }
 }
 
 loadData();
+
+
 
 
 
