@@ -84,8 +84,10 @@ async function loadData(){
  DATA.live_matches=local;
  const savedCareer=JSON.parse(localStorage.getItem("nict_career_records")||"null");
  const savedFormats=JSON.parse(localStorage.getItem("nict_players_format")||"null");
+ const savedTeamRecords=JSON.parse(localStorage.getItem("nict_team_records")||"null");
  if(savedCareer)DATA.career_records=savedCareer;
  if(savedFormats)DATA.players_format=savedFormats;
+ if(savedTeamRecords)DATA.team_records=savedTeamRecords;
  loadSavedPerformance();
  try{
    const cloud=await cloudMatches();
@@ -99,17 +101,51 @@ async function loadData(){
  render();
 }
 
+let STATS_REFRESHED_FOR=new Set(
+  JSON.parse(localStorage.getItem("nict_stats_refreshed_for")||"[]")
+);
+
+function saveStatsRefreshedFor(){
+  localStorage.setItem(
+    "nict_stats_refreshed_for",
+    JSON.stringify([...STATS_REFRESHED_FOR])
+  );
+}
+
 function startCloudPolling(){
  if(window.__nictCloudPoll)return;
  window.__nictCloudPoll=setInterval(async()=>{
    try{
      const cloud=await cloudMatches();
      if(Array.isArray(cloud)&&cloud.length){
+       const prev=JSON.stringify(DATA.live_matches||[]);
        DATA.live_matches=cloud;
        localStorage.setItem("nict_uploaded_matches",JSON.stringify(cloud));
+
+       const newlyCompleted=cloud.filter(m=>{
+         const id=String(m.match_id||"");
+         return (
+           id &&
+           m.player_records_enabled===true &&
+           String(m.status||"").toLowerCase()==="completed" &&
+           !STATS_REFRESHED_FOR.has(id)
+         );
+       });
+
+       if(newlyCompleted.length){
+         for(const m of newlyCompleted){
+           STATS_REFRESHED_FOR.add(String(m.match_id));
+         }
+         saveStatsRefreshedFor();
+         await refreshStatsFromServer({silent:true});
+       }
+
        if(view==="live"){renderLive(getActiveMatch())}
        if(view==="matches"){matches()}
        if(view==="admin"){renderAdminMatches()}
+       else if(JSON.stringify(cloud)!==prev && ["teams","headToHead","pointTable","careerRecords","players"].includes(view)){
+         render();
+       }
      }
    }catch(e){console.warn("Cloud polling failed",e)}
  },3000);
@@ -280,8 +316,8 @@ function renderLive(raw){
   const shown=ds.slice(0,replayState.idx);
 
   /*
-    Never update career/rankings simply because replay reached the last ball.
-    Admin completion is the only completion trigger.
+    Stats refresh is triggered separately once the shared server
+    marks the match completed after the final ball.
   */
 
   const prepared=shown.map((d,i)=>({
@@ -315,6 +351,21 @@ function renderLive(raw){
 
   const finished=shown.length===ds.length&&ds.length>0;
   const resultText=finished?matchResultText(m,shown):"";
+
+  if(
+    finished &&
+    (
+      m.player_records_enabled===true ||
+      String(m.status||"").toLowerCase()==="completed"
+    )
+  ){
+    const matchId=String(m.match_id||"");
+    if(matchId && !STATS_REFRESHED_FOR.has(matchId)){
+      STATS_REFRESHED_FOR.add(matchId);
+      saveStatsRefreshedFor();
+      refreshStatsFromServer({silent:true});
+    }
+  }
 
   let statusLabel="LIVE";
   const testSession=testSessionForDelivery(prepared,Math.max(0,prepared.length-1),m);
@@ -905,7 +956,45 @@ function playingXI(m,a,b){
  return `<div class="squads">${box(a)}${box(b)}</div>`;
 }
 
-function teamsPage(){const rows=DATA.teams.map(t=>`<tr><td><b>${esc(t.short_team)}</b></td><td>${t.matches}</td><td>${t.wins}</td><td>${t.losses}</td><td>${t.no_results}</td><td>${t.win_percentage}%</td></tr>`);app.innerHTML=head("Teams","Every team has 20 registered players · 11 playing XI + 9 standby")+table(["Team","Matches","Wins","Losses","NR","Win %"],rows)}
+function mergedTeamRecords(){
+  const base=JSON.parse(JSON.stringify(DATA.teams||[]));
+  const dynamic=DATA.team_records||[];
+  const map=Object.fromEntries(
+    base.map(t=>[st(t.short_team||t.team),{...t}])
+  );
+
+  for(const tr of dynamic){
+    const key=st(tr.team||tr.short_team);
+    if(!map[key]){
+      map[key]={
+        team:tr.team||key,
+        short_team:key,
+        matches:0,
+        wins:0,
+        losses:0,
+        no_results:0,
+        win_percentage:0
+      };
+    }
+
+    map[key].matches+=Number(tr.matches||0);
+    map[key].wins+=Number(tr.wins||0);
+    map[key].losses+=Number(tr.losses||0);
+    map[key].no_results+=Number(tr.ties||0)+Number(tr.draws||0);
+    map[key].win_percentage=map[key].matches
+      ?+((map[key].wins/map[key].matches)*100).toFixed(1)
+      :0;
+  }
+
+  return Object.values(map).sort(
+    (a,b)=>b.win_percentage-a.win_percentage||a.short_team.localeCompare(b.short_team)
+  );
+}
+
+function teamsPage(){
+  const rows=mergedTeamRecords().map(t=>`<tr><td><b>${esc(t.short_team)}</b></td><td>${t.matches}</td><td>${t.wins}</td><td>${t.losses}</td><td>${t.no_results}</td><td>${t.win_percentage}%</td></tr>`);
+  app.innerHTML=head("Teams","Every team has 20 registered players · 11 playing XI + 9 standby · records update automatically after each match")+table(["Team","Matches","Wins","Losses","NR","Win %"],rows);
+}
 function playersPage(){const rows=mergedCareerRecords().map(p=>`<tr><td>${playerLink(p.name)}</td><td>${p.team}</td><td>${esc(p.role)}</td><td>${fmt(p.runs)}</td><td>${p.average}</td><td>${p.hundreds}</td><td>${p.fifty_plus}</td><td>${p.wickets}</td><td>${p.catches}</td></tr>`);app.innerHTML=head("Players","100-player tournament database")+`<input id="ps" class="input search" placeholder="Search player or team">`+table(["Player","Team","Role","Runs","Avg","100s","50+","Wkts","Catches"],rows);document.getElementById("ps").oninput=e=>{let q=e.target.value.toLowerCase();document.querySelectorAll(".table tbody tr").forEach(r=>r.style.display=r.innerText.toLowerCase().includes(q)?"":"none")}}
 function playerPage(){
  const p=mergedCareerRecords().find(x=>x.name===currentPlayer);
@@ -1125,7 +1214,7 @@ function records(){app.innerHTML=head("Records","Choose an individual record cat
 ["Most Catches","catchRecords"],
 ["Points Table 2026","pointTable"]
 ].map(x=>`<div class="card"><h3>${x[0]}</h3><button class="btn" onclick="navigate('${x[1]}')">Open</button></div>`).join("")}</div>`}
-function headToHead(){const ts=Object.keys(DATA.squads||{});app.innerHTML=head("Head to Head","Opponent records from the supplied starting dataset")+`<div class="tabs">${ts.map(t=>`<button onclick="h2h('${t}')">${t}</button>`).join("")}</div><div id="h2h" class="card empty">Select a team.</div>`}
+function headToHead(){const ts=Object.keys(DATA.squads||{});app.innerHTML=head("Head to Head","Opponent records update automatically after each completed match")+`<div class="tabs">${ts.map(t=>`<button onclick="h2h('${t}')">${t}</button>`).join("")}</div><div id="h2h" class="card empty">Select a team.</div>`}
 function h2h(t){const rows=DATA.opponent_records.filter(x=>x.short_team===t||x.team===t).slice(0,50);document.getElementById("h2h").innerHTML=rows.length?table(Object.keys(rows[0]).slice(0,9),rows.map(x=>`<tr>${Object.values(x).slice(0,9).map(v=>`<td>${esc(v)}</td>`).join("")}</tr>`)):"No records found."}
 function stats(){app.innerHTML=head("Stats Explorer","Use the menu to move between format rankings, career records and opponent records")+`<div class="grid"><div class="card"><h3>Batting</h3><p>Runs · average · SR · 100s · 50+ · 4s · 6s</p><button class="btn" onclick="navigate('batRankings')">Open</button></div><div class="card"><h3>Bowling</h3><p>Overs · economy · wickets · bowling rating</p><button class="btn" onclick="navigate('bowlRankings')">Open</button></div><div class="card"><h3>Fielding</h3><p>Catches · stumpings · run-outs</p><button class="btn" onclick="navigate('catchRecords')">Open</button></div><div class="card"><h3>Player Career</h3><p>Separate Test, ODI and T20 records.</p><button class="btn" onclick="navigate('careerRecords')">Open</button></div></div>`}
 
@@ -1375,10 +1464,9 @@ function adminPanel(){
    "Match controls and player-stat approval"
  )+
  `<div class="notice">
-   Admin controls are intentionally limited to:
-   <b>Start Match</b>, <b>Rain</b>, <b>Suspend</b>,
-   <b>Resume Match</b> and <b>Update Stats of Player</b>.
-   Player career statistics are never changed automatically.
+   Admin controls: <b>Start Match</b>, <b>Rain</b>, <b>Suspend</b>,
+   <b>Resume Match</b>, <b>Update Stats of Player</b> and <b>Delete Match</b>.
+   Player and team records update automatically when a match finishes.
  </div>
  <div class="section">
    <h2>Matches</h2>
@@ -1393,7 +1481,7 @@ function adminPanel(){
  renderAdminMatches();
 }
 
-async function rebuildCareerFromCompletedMatches(){
+async function refreshStatsFromServer({silent=false}={}){
   try{
     const r=await fetch("/api/stats",{cache:"no-store"});
     if(!r.ok)throw new Error(await r.text()||"Stats server unavailable");
@@ -1405,15 +1493,29 @@ async function rebuildCareerFromCompletedMatches(){
     if(s.bowling_rankings)DATA.bowling_rankings=s.bowling_rankings;
     if(s.ratings)DATA.ratings=s.ratings;
     if(s.opponent_records)DATA.opponent_records=s.opponent_records;
+    if(s.team_records)DATA.team_records=s.team_records;
 
     localStorage.setItem("nict_career_records",JSON.stringify(DATA.career_records||[]));
     localStorage.setItem("nict_players_format",JSON.stringify(DATA.players_format||[]));
-    renderAdminMatches();
-    render();
-    alert("Approved player statistics have been refreshed.");
+    localStorage.setItem("nict_batting_rankings",JSON.stringify(DATA.batting_rankings||[]));
+    localStorage.setItem("nict_bowling_rankings",JSON.stringify(DATA.bowling_rankings||[]));
+    localStorage.setItem("nict_ratings",JSON.stringify(DATA.ratings||[]));
+    if(s.team_records){
+      localStorage.setItem("nict_team_records",JSON.stringify(s.team_records));
+    }
+
+    if(view==="admin")renderAdminMatches();
+    if(["teams","headToHead","pointTable","careerRecords","players","player","batRankings","bowlRankings","allRoundRankings"].includes(view)){
+      render();
+    }
+    if(!silent)alert("Player and team statistics have been refreshed.");
   }catch(e){
-    alert("Could not update player stats: "+e.message);
+    if(!silent)alert("Could not update stats: "+e.message);
   }
+}
+
+async function rebuildCareerFromCompletedMatches(){
+  await refreshStatsFromServer({silent:false});
 }
 
 async function updatePlayerStats(index){
@@ -1533,6 +1635,11 @@ function renderAdminMatches(){
           ${finished?"":"disabled"}>
           Update Stats of Player
         </button>
+
+        <button class="btn danger"
+          onclick="deleteUploaded(${i})">
+          Delete Match
+        </button>
       </div>
     </div>`;
   }).join("");
@@ -1625,9 +1732,7 @@ async function resumeMatch(index){
   }
 }
 
-function eventBallOptions(m){const count=(m.deliveries||[]).length;return Array.from({length:count+1},(_,i)=>`<option value="${i}">${i===0?"Before first ball":`After ball ${i}`}</option>`).join("")}
 function saveUploadedMatches(local){localStorage.setItem("nict_uploaded_matches",JSON.stringify(local));DATA.live_matches=local}
-function addMatchEvent(index,type){const local=JSON.parse(localStorage.getItem("nict_uploaded_matches")||"[]"),match=local[index];if(!match)return;match.events=match.events||[];const afterBall=Number(document.getElementById(`eventBall${index}`).value);match.events=match.events.filter(e=>!(Number(e.afterBall)===afterBall&&e.type===type));match.events.push({type,afterBall,resumed:false});saveUploadedMatches(local);renderAdminMatches()}
 function parseFilename(name){
  const clean=name.replace(/\.[^.]+$/,"");
  const m=clean.match(/(.+?)_vs_(.+)$/i);
@@ -1671,13 +1776,46 @@ async function useUploaded(i){
   }catch(e){alert("Could not start shared live match: "+e.message)}
 }
 async function deleteUploaded(i){
-  const m=DATA.live_matches?.[i];if(!m)return;
+  const m=DATA.live_matches?.[i];
+  if(!m)return;
+
+  if(sessionStorage.getItem("nict_admin")!=="true"){
+    alert("Admin authentication required.");
+    return;
+  }
+
+  if(!confirm(
+    `Delete ${st(m.team_a)} vs ${st(m.team_b)}?\n\nThis removes the match from the server and recalculates player and team records.`
+  ))return;
+
   try{
     await adminCloud("DELETE",null,m.match_id);
+
+    const activeId=localStorage.getItem("nict_active_match_id");
+    if(String(activeId)===String(m.match_id)){
+      localStorage.removeItem("nict_active_match_id");
+      localStorage.removeItem("nict_active_match");
+      if(view==="live")view="matches";
+    }
+
+    STATS_REFRESHED_FOR.delete(String(m.match_id));
+    saveStatsRefreshedFor();
+
     DATA.live_matches=await cloudMatches();
+    localStorage.setItem(
+      "nict_uploaded_matches",
+      JSON.stringify(DATA.live_matches||[])
+    );
+
+    await refreshStatsFromServer({silent:true});
     renderAdminMatches();
-  }catch(e){alert("Delete failed: "+e.message)}
+    if(view!=="admin")render();
+  }catch(e){
+    alert("Delete failed: "+e.message);
+  }
 }
 
 loadData();
+
+
 
