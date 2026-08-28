@@ -37,20 +37,14 @@ const CLOUD_API="/api/matches";
 let CLOUD_MATCHES=[];
 async function cloudMatches(){
   try{
-    const r=await fetch(CLOUD_API,{
-      method:"GET",
-      cache:"no-store"
-    });
+    const r=await fetch(CLOUD_API,{method:"GET",cache:"no-store"});
+    const raw=await r.text();
 
-    const text=await r.text();
-
-    if(!r.ok){
-      throw new Error(text||"Could not load matches from shared server.");
-    }
+    if(!r.ok)throw new Error(raw||"Could not load matches from shared server.");
 
     let rows=[];
     try{
-      rows=JSON.parse(text);
+      rows=raw?JSON.parse(raw):[];
     }catch(e){
       throw new Error("Server returned invalid match data.");
     }
@@ -59,10 +53,7 @@ async function cloudMatches(){
       rows=Array.isArray(rows.matches)?rows.matches:[];
     }
 
-    CLOUD_MATCHES=rows
-      .map(x=>x?.match_json||x)
-      .filter(Boolean);
-
+    CLOUD_MATCHES=rows.map(x=>x?.match_json||x).filter(Boolean);
     return CLOUD_MATCHES;
   }catch(e){
     console.warn("Shared match server unavailable:",e);
@@ -71,9 +62,7 @@ async function cloudMatches(){
 }
 async function adminCloud(method,body,id=""){
   const password=sessionStorage.getItem("nict_admin_password")||"";
-  const url=id
-    ?`${CLOUD_API}?id=${encodeURIComponent(id)}`
-    :CLOUD_API;
+  const url=id?`${CLOUD_API}?id=${encodeURIComponent(id)}`:CLOUD_API;
 
   const options={
     method,
@@ -88,22 +77,17 @@ async function adminCloud(method,body,id=""){
   }
 
   const r=await fetch(url,options);
-  const text=await r.text();
+  const raw=await r.text();
 
   let data={};
   try{
-    data=text?JSON.parse(text):{};
+    data=raw?JSON.parse(raw):{};
   }catch(e){
-    data={error:text};
+    data={error:raw};
   }
 
   if(!r.ok){
-    throw new Error(
-      data.error||
-      data.message||
-      text||
-      "Cloud request failed"
-    );
+    throw new Error(data.error||data.message||raw||"Cloud request failed");
   }
 
   return data;
@@ -1439,27 +1423,37 @@ function isMatchFinished(m){
 }
 
 function adminPanel(){
- app.innerHTML=head(
-   "Admin",
-   "Match controls and player-stat approval"
- )+
- `<div class="notice">
-   Admin controls are intentionally limited to:
-   <b>Start Match</b>, <b>Rain</b>, <b>Suspend</b>,
-   <b>Resume Match</b> and <b>Delete Current Live Match</b>.
-   When a match is finished, shared team records and player career statistics update automatically.
- </div>
- <div class="section">
-   <h2>Matches</h2>
-   <div id="adminMatches"></div>
- </div>
- <div class="section">
-   <button class="btn secondary"
-     onclick="sessionStorage.removeItem('nict_admin');sessionStorage.removeItem('nict_admin_password');admin()">
-     Lock Admin
-   </button>
- </div>`;
- renderAdminMatches();
+  app.innerHTML=head(
+    "Admin",
+    "Match controls and player-stat approval"
+  )+
+  `<div class="notice">
+    Upload a new match JSON, then use the available controls to manage matches.
+    <br>
+    <b>Available controls:</b>
+    Start Match, Rain, Suspend, Resume Match and Delete Current Live Match.
+    When a match is finished, shared team records and player career statistics update automatically.
+  </div>
+
+  <div class="section upload-box">
+    <h2>Upload Match JSON</h2>
+    <input class="input file" id="jsonFile" type="file" accept=".json,application/json">
+    <button class="btn" onclick="uploadJSON()">Upload Match</button>
+    <p id="uploadMsg" class="muted"></p>
+  </div>
+
+  <div class="section">
+    <h2>Matches</h2>
+    <div id="adminMatches"></div>
+  </div>
+
+  <div class="section">
+    <button class="btn secondary"
+      onclick="sessionStorage.removeItem('nict_admin');sessionStorage.removeItem('nict_admin_password');admin()">
+      Lock Admin
+    </button>
+  </div>`;
+  renderAdminMatches();
 }
 
 let __nictCompleting=false;
@@ -1769,9 +1763,7 @@ async function uploadJSON(){
     d.file_name=f.name;
     d.match_id=d.match_id||f.name.replace(/\.json$/i,"");
 
-    if(!d.match_id){
-      d.match_id="MATCH_"+Date.now();
-    }
+    if(!d.match_id)d.match_id="MATCH_"+Date.now();
 
     d.status="upcoming";
     d.started_at=null;
@@ -1782,29 +1774,23 @@ async function uploadJSON(){
 
     d.deliveries=d.deliveries.map(x=>({
       ...x,
-      batsman_team:x.batsman_team||
-        ((Number(x.innings||1)%2===1)?d.team_a:d.team_b),
-      bowling_team:x.bowling_team||
-        ((Number(x.innings||1)%2===1)?d.team_b:d.team_a)
+      batsman_team:x.batsman_team||((Number(x.innings||1)%2===1)?d.team_a:d.team_b),
+      bowling_team:x.bowling_team||((Number(x.innings||1)%2===1)?d.team_b:d.team_a)
     }));
 
     d.events=Array.isArray(d.events)?d.events:[];
 
     if(msg)msg.textContent="Uploading match to shared server...";
 
-    await adminCloud("POST",d,d.match_id);
+    await adminCloud("POST",d);
 
     DATA.live_matches=await cloudMatches();
-
     localStorage.setItem(
       "nict_uploaded_matches",
       JSON.stringify(DATA.live_matches||[])
     );
 
-    if(msg){
-      msg.textContent=
-        `Uploaded successfully: ${d.team_a} vs ${d.team_b}`;
-    }
+    if(msg)msg.textContent=`Uploaded successfully: ${d.team_a} vs ${d.team_b}`;
 
     input.value="";
     renderAdminMatches();
