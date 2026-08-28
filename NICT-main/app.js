@@ -31,6 +31,7 @@
    ============================================================ */
 
 const DATA={}; let view="home", currentPlayer="", liveTimer=null, rankingFormat="T20", recordFormat="T20";
+const BASELINE_STATS={};
 const BALL_DELAY_SECONDS=20, OVER_BREAK_SECONDS=60, INNINGS_BREAK_SECONDS=900, TOSS_BREAK_SECONDS=900;
 let app=null;
 const CLOUD_API="/api/matches";
@@ -89,6 +90,70 @@ function table(h,rows){return `<div class="table-wrap"><table class="table"><the
 function player(name){currentPlayer=name;view="player";render()}
 function playerLink(name){return `<a href="#" onclick="player(${jsArg(name)});return false">${esc(name)}</a>`}
 
+function hasStatsRows(v){
+  return Array.isArray(v)&&v.length>0;
+}
+
+function snapshotBaselineStats(){
+  BASELINE_STATS.career_records=JSON.parse(JSON.stringify(DATA.career_records||[]));
+  BASELINE_STATS.players_format=JSON.parse(JSON.stringify(DATA.players_format||[]));
+  BASELINE_STATS.batting_rankings=JSON.parse(JSON.stringify(DATA.batting_rankings||[]));
+  BASELINE_STATS.bowling_rankings=JSON.parse(JSON.stringify(DATA.bowling_rankings||[]));
+  BASELINE_STATS.ratings=JSON.parse(JSON.stringify(DATA.ratings||[]));
+  BASELINE_STATS.opponent_records=JSON.parse(JSON.stringify(DATA.opponent_records||[]));
+  BASELINE_STATS.team_records=JSON.parse(JSON.stringify(DATA.team_records||[]));
+}
+
+function restoreSavedStats(){
+  const saved={
+    career_records:JSON.parse(localStorage.getItem("nict_career_records")||"null"),
+    players_format:JSON.parse(localStorage.getItem("nict_players_format")||"null"),
+    batting_rankings:JSON.parse(localStorage.getItem("nict_batting_rankings")||"null"),
+    bowling_rankings:JSON.parse(localStorage.getItem("nict_bowling_rankings")||"null"),
+    ratings:JSON.parse(localStorage.getItem("nict_ratings")||"null"),
+    opponent_records:JSON.parse(localStorage.getItem("nict_opponent_records")||"null"),
+    team_records:JSON.parse(localStorage.getItem("nict_team_records")||"null")
+  };
+
+  for(const [key,value] of Object.entries(saved)){
+    if(hasStatsRows(value))DATA[key]=value;
+  }
+}
+
+function applyStatsSnapshot(s){
+  const fields=[
+    "career_records",
+    "players_format",
+    "batting_rankings",
+    "bowling_rankings",
+    "ratings",
+    "opponent_records",
+    "team_records"
+  ];
+
+  for(const key of fields){
+    const incoming=s?.[key];
+    if(hasStatsRows(incoming)){
+      DATA[key]=incoming;
+      continue;
+    }
+
+    if(!hasStatsRows(DATA[key]) && hasStatsRows(BASELINE_STATS[key])){
+      DATA[key]=JSON.parse(JSON.stringify(BASELINE_STATS[key]));
+    }
+  }
+}
+
+function persistStatsToLocalStorage(){
+  localStorage.setItem("nict_career_records",JSON.stringify(DATA.career_records||[]));
+  localStorage.setItem("nict_players_format",JSON.stringify(DATA.players_format||[]));
+  localStorage.setItem("nict_batting_rankings",JSON.stringify(DATA.batting_rankings||[]));
+  localStorage.setItem("nict_bowling_rankings",JSON.stringify(DATA.bowling_rankings||[]));
+  localStorage.setItem("nict_ratings",JSON.stringify(DATA.ratings||[]));
+  localStorage.setItem("nict_opponent_records",JSON.stringify(DATA.opponent_records||[]));
+  localStorage.setItem("nict_team_records",JSON.stringify(DATA.team_records||[]));
+}
+
 async function loadData(){
  if(!app)return;
  const names=["players_format","career_records","ratings","batting_rankings","bowling_rankings","catches","teams","squads","opponent_records","live_matches"];
@@ -102,19 +167,19 @@ async function loadData(){
      DATA[n]=Array.isArray(DATA[n])?DATA[n]:[];
    }
  }
+
+ snapshotBaselineStats();
+ restoreSavedStats();
+
  const local=JSON.parse(localStorage.getItem("nict_uploaded_matches")||"[]");
  DATA.live_matches=local;
- const savedCareer=JSON.parse(localStorage.getItem("nict_career_records")||"null");
- const savedFormats=JSON.parse(localStorage.getItem("nict_players_format")||"null");
- const savedTeamRecords=JSON.parse(localStorage.getItem("nict_team_records")||"null");
- if(savedCareer)DATA.career_records=savedCareer;
- if(savedFormats)DATA.players_format=savedFormats;
- if(savedTeamRecords)DATA.team_records=savedTeamRecords;
  loadSavedPerformance();
  try{
    const cloud=await cloudMatches();
    if(cloud!==null)applyCloudMatches(cloud);
  }catch(e){console.warn("Cloud initial load failed",e)}
+
+ await refreshStatsFromServer({silent:true});
  selectSharedMatchFromURL();
  startCloudPolling();
  render();
@@ -231,6 +296,16 @@ function live(){
  if(!liveTimer)liveTimer=setInterval(()=>{if(view==="live"){const active=getActiveMatch();if(active)renderLive(active)}},1000);
  renderLive(m);
 }
+function matchTimings(m){
+  const rules=m?.rules||{};
+  return {
+    ballDelay:Number(rules.ball_delay_seconds)||BALL_DELAY_SECONDS,
+    overBreak:Number(rules.over_break_seconds)||OVER_BREAK_SECONDS,
+    inningsBreak:Number(rules.innings_break_seconds)||INNINGS_BREAK_SECONDS,
+    preMatch:Number(rules.pre_match_delay_seconds)||TOSS_BREAK_SECONDS
+  };
+}
+
 function normalizedMatch(m){
  const copy=JSON.parse(JSON.stringify(m));
  let a=st(copy.team_a),b=st(copy.team_b);
@@ -241,7 +316,23 @@ function normalizedMatch(m){
  }
  
  copy.team_a=a||"GCET";copy.team_b=b||"GLB";copy.deliveries=copy.deliveries||[];
- const toss=copy.toss||{};copy.toss_winner=copy.toss_winner||toss.winner||toss.team||toss.won_by||"";copy.toss_decision=copy.toss_decision||toss.decision||toss.choice||toss.elected_to||"";
+ const toss=copy.toss||{};
+ copy.toss_winner=st(
+   copy.toss_winner||
+   toss.winner||
+   toss.team||
+   toss.won_by||
+   copy.toss_result?.winner||
+   ""
+ );
+ copy.toss_decision=String(
+   copy.toss_decision||
+   toss.decision||
+   toss.choice||
+   toss.elected_to||
+   copy.toss_result?.decision||
+   ""
+ );
  return copy;
 }
 function tossSummary(m){if(!m.toss_winner)return "Toss result not available";const decision=String(m.toss_decision||"").toLowerCase();return `${st(m.toss_winner)} won the toss and chose to ${decision.includes("bowl")||decision.includes("field")?"bowl":"bat"}`}
@@ -365,20 +456,18 @@ function renderLive(raw){
   const testSession=testSessionForDelivery(prepared,Math.max(0,prepared.length-1),m);
   const testDayLabel=testSession?` · DAY ${testSession.day}`:"";
   if(resultText)statusLabel="RESULT";
-  else if(matchEvent?.type==="innings_break")statusLabel="INNINGS BREAK";
+  else if(matchEvent)statusLabel=statusLabelForEvent(matchEvent,statusLabel);
 
-  const eventText=
-    resultText ||
-    (matchEvent?.type==="innings_break"
-      ?eventLabel(matchEvent)
-      :"");
+  const eventText=resultText||(matchEvent?eventLabel(matchEvent):"");
+  const breakBanner=breakBannerHTML(matchEvent);
 
   app.innerHTML=head(
     `${a} vs ${b}`,
     `${m.format||"Match"} · ${m.match_id||""}`
   )+
   `<div class="notice"><b>Toss:</b> ${esc(tossSummary(m))}</div>`+
-  (eventText
+  breakBanner+
+  (eventText && !breakBanner
     ?`<div class="notice">${esc(eventText)}</div>`
     :"")+
   `<div class="scorehero">
@@ -462,15 +551,45 @@ function formatCountdown(seconds){
  return `${String(m).padStart(2,"0")}:${String(r).padStart(2,"0")}`;
 }
 function eventLabel(event){
+ if(!event)return "";
  if(event.type==="toss")return `Toss result confirmed · First ball in ${formatCountdown(event.remaining)}`;
- if(event.type==="innings_break")return `Innings break · Second innings in ${formatCountdown(event.remaining)}`;
+ if(event.type==="pre_match")return `Match starting in ${formatCountdown(event.remaining)}`;
+ if(event.type==="waiting_start")return "Waiting for admin to start the match from the Admin panel.";
+ if(event.type==="innings_break")return `Innings break · Play resumes in ${formatCountdown(event.remaining)}`;
  if(event.type==="over_break")return `Over break · Next ball in ${formatCountdown(event.remaining)}`;
  if(event.type==="tea")return `Tea break · Play resumes in ${formatCountdown(event.remaining)}`;
  if(event.type==="drinks")return `Drinks break · Play resumes in ${formatCountdown(event.remaining)}`;
+ if(event.type==="day_break")return `Stumps · Day ${event.day||""} complete · Next session in ${formatCountdown(event.remaining)}`;
  if(event.type==="rain")return "Rain suspension";
  if(event.type==="suspend")return "Match suspended";
  if(event.type==="draw")return "Match drawn";
  return "Match in progress";
+}
+
+function statusLabelForEvent(event,defaultLabel="LIVE"){
+ if(!event)return defaultLabel;
+ const labels={
+  toss:"TOSS · PRE-MATCH",
+  pre_match:"PRE-MATCH",
+  waiting_start:"NOT STARTED",
+  innings_break:"INNINGS BREAK",
+  over_break:"OVER BREAK",
+  tea:"TEA BREAK",
+  drinks:"DRINKS BREAK",
+  day_break:"STUMPS",
+  rain:"RAIN DELAY",
+  suspend:"SUSPENDED"
+ };
+ return labels[event.type]||defaultLabel;
+}
+
+function breakBannerHTML(event){
+ if(!event||event.remaining===undefined)return "";
+ return `<div class="notice break-banner" style="text-align:center;padding:18px">
+   <div class="meta">${esc(statusLabelForEvent(event))}</div>
+   <div class="big" style="font-size:2rem;margin-top:8px">${formatCountdown(event.remaining)}</div>
+   <div style="margin-top:8px">${esc(eventLabel(event))}</div>
+ </div>`;
 }
 function testSessionForDelivery(ds,index,m){
   if(careerFormat(m?.format)!=="Test")return null;
@@ -495,20 +614,26 @@ function testSessionForDelivery(ds,index,m){
 
 function getReplayState(ds,elapsed,m){
   elapsed=Math.max(0,Number(elapsed)||0);
+  const timings=matchTimings(m);
   let time=0;
 
-  if(m.toss_winner){
-    if(elapsed<TOSS_BREAK_SECONDS){
-      return {
-        idx:0,
-        event:{
-          type:"toss",
-          remaining:TOSS_BREAK_SECONDS-elapsed
-        }
-      };
-    }
-    time=TOSS_BREAK_SECONDS;
+  if(!m.started_at){
+    return {
+      idx:0,
+      event:{type:"waiting_start",remaining:0}
+    };
   }
+
+  if(elapsed<timings.preMatch){
+    return {
+      idx:0,
+      event:{
+        type:m.toss_winner?"toss":"pre_match",
+        remaining:timings.preMatch-elapsed
+      }
+    };
+  }
+  time=timings.preMatch;
 
   let previousInnings=null;
   let legalInCurrentOver=0;
@@ -533,26 +658,32 @@ function getReplayState(ds,elapsed,m){
     const innings=Number(d.innings||1);
 
     if(previousInnings!==null&&innings!==previousInnings){
-      if(elapsed<time+INNINGS_BREAK_SECONDS){
+      if(elapsed<time+timings.inningsBreak){
         return {
           idx:i,
           event:{
             type:"innings_break",
-            remaining:time+INNINGS_BREAK_SECONDS-elapsed
+            remaining:time+timings.inningsBreak-elapsed
           }
         };
       }
-      time+=INNINGS_BREAK_SECONDS;
+      time+=timings.inningsBreak;
       legalInCurrentOver=0;
       dayLegal=0;
       sessionStage=0;
     }
 
     if(i>0&&legalInCurrentOver===0){
-      if(elapsed<time+OVER_BREAK_SECONDS){
-        return {idx:i,event:null};
+      if(elapsed<time+timings.overBreak){
+        return {
+          idx:i,
+          event:{
+            type:"over_break",
+            remaining:time+timings.overBreak-elapsed
+          }
+        };
       }
-      time+=OVER_BREAK_SECONDS;
+      time+=timings.overBreak;
     }
 
     /*
@@ -571,20 +702,28 @@ function getReplayState(ds,elapsed,m){
 
       if(dayLegal>=sessionLimit){
         let breakSeconds=0;
+        let breakType="drinks";
 
         if(sessionStage===0){
           breakSeconds=testSchedule.drinksSeconds;
+          breakType="drinks";
         }else if(sessionStage===1){
           breakSeconds=testSchedule.teaSeconds;
+          breakType="tea";
         }else{
           breakSeconds=testSchedule.dayBreakSeconds;
+          breakType="day_break";
           testDay++;
         }
 
         if(elapsed<time+breakSeconds){
           return {
             idx:i,
-            event:null
+            event:{
+              type:breakType,
+              remaining:time+breakSeconds-elapsed,
+              day:testDay
+            }
           };
         }
 
@@ -601,11 +740,11 @@ function getReplayState(ds,elapsed,m){
       }
     }
 
-    if(elapsed<time+BALL_DELAY_SECONDS){
+    if(elapsed<time+timings.ballDelay){
       return {idx:i,event:null};
     }
 
-    time+=BALL_DELAY_SECONDS;
+    time+=timings.ballDelay;
 
     if(legalBall(d)){
       legalInCurrentOver++;
@@ -1484,6 +1623,11 @@ function adminPanel(){
    <p id="uploadMsg" class="muted" style="margin-top:8px"></p>
  </div>
  <div class="section">
+   <h2>Statistics</h2>
+   <p class="muted">Reload player career, rankings, team records and head-to-head data from the server.</p>
+   <button class="btn" onclick="rebuildCareerFromCompletedMatches()">Refresh Statistics</button>
+ </div>
+ <div class="section">
    <h2>Matches</h2>
    <div id="adminMatches"></div>
  </div>
@@ -1501,31 +1645,21 @@ async function refreshStatsFromServer({silent=false}={}){
     const r=await fetch("/api/stats",{cache:"no-store"});
     if(!r.ok)throw new Error(await r.text()||"Stats server unavailable");
     const s=await r.json();
+    if(s.error)throw new Error(s.error);
 
-    if(s.career_records)DATA.career_records=s.career_records;
-    if(s.players_format)DATA.players_format=s.players_format;
-    if(s.batting_rankings)DATA.batting_rankings=s.batting_rankings;
-    if(s.bowling_rankings)DATA.bowling_rankings=s.bowling_rankings;
-    if(s.ratings)DATA.ratings=s.ratings;
-    if(s.opponent_records)DATA.opponent_records=s.opponent_records;
-    if(s.team_records)DATA.team_records=s.team_records;
-
-    localStorage.setItem("nict_career_records",JSON.stringify(DATA.career_records||[]));
-    localStorage.setItem("nict_players_format",JSON.stringify(DATA.players_format||[]));
-    localStorage.setItem("nict_batting_rankings",JSON.stringify(DATA.batting_rankings||[]));
-    localStorage.setItem("nict_bowling_rankings",JSON.stringify(DATA.bowling_rankings||[]));
-    localStorage.setItem("nict_ratings",JSON.stringify(DATA.ratings||[]));
-    if(s.team_records){
-      localStorage.setItem("nict_team_records",JSON.stringify(s.team_records));
-    }
+    applyStatsSnapshot(s);
+    persistStatsToLocalStorage();
 
     if(view==="admin")renderAdminMatches();
-    if(["teams","headToHead","pointTable","careerRecords","players","player","batRankings","bowlRankings","allRoundRankings"].includes(view)){
+    if(["home","teams","headToHead","pointTable","careerRecords","players","player","batRankings","bowlRankings","allRoundRankings","rankings","records","stats","catchRecords","centuryRecords","fiftyRecords","sixRecords","fourRecords","wicketRecords"].includes(view)){
       render();
     }
     if(!silent)alert("Player and team statistics have been refreshed.");
   }catch(e){
-    if(!silent)alert("Could not update stats: "+e.message);
+    console.warn("Stats refresh failed, keeping loaded baseline data.",e);
+    applyStatsSnapshot({});
+    persistStatsToLocalStorage();
+    if(!silent)alert("Could not update stats from server. Showing saved player and team records.");
   }
 }
 
@@ -1820,6 +1954,13 @@ async function uploadJSON(){
     d.match_id=d.match_id||f.name.replace(/\.json$/i,"");
     d.status="upcoming";
     d.started_at=null;
+    d.rules={
+      ball_delay_seconds:20,
+      over_break_seconds:60,
+      innings_break_seconds:900,
+      pre_match_delay_seconds:900,
+      ...(d.rules||{})
+    };
     d.points_table_enabled=false;
     d.player_records_enabled=false;
     d.rankings_enabled=false;
@@ -1847,13 +1988,17 @@ async function uploadJSON(){
 async function useUploaded(i){
   const m=DATA.live_matches?.[i];if(!m)return;
   try{
-    const updated={...m,status:"live",started_at:new Date().toISOString()};
-    await adminCloud("POST",updated);
+    const now=new Date().toISOString();
+    const updated={...m,status:"live",started_at:now};
+    await adminCloud("POST",updated,m.match_id);
     const cloud=await cloudMatches();
     if(cloud!==null)applyCloudMatches(cloud);
     const fresh=DATA.live_matches.find(x=>String(x.match_id)===String(m.match_id))||updated;
     localStorage.setItem("nict_active_match_id",String(fresh.match_id));
-    view="live";render();
+    localStorage.removeItem("nict_replay_start");
+    replayStart=0;
+    view="live";
+    render();
   }catch(e){alert("Could not start shared live match: "+e.message)}
 }
 async function deleteUploaded(i){
@@ -1930,7 +2075,8 @@ function initApp(){
     startLive,
     h2h,
     updateRankingFormat,
-    updateRecordFormat
+    updateRecordFormat,
+    rebuildCareerFromCompletedMatches
   });
 
   loadData();
@@ -1941,3 +2087,6 @@ if(document.readyState==="loading"){
 }else{
   initApp();
 }
+
+
+
