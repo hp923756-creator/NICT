@@ -146,6 +146,217 @@ function buildRow(match) {
   };
 }
 
+function st(v) {
+  return String(v ?? "").trim();
+}
+
+function careerFormat(format) {
+  const s = st(format).toUpperCase();
+  if (s.includes("T20")) return "T20";
+  if (s.includes("ODI")) return "ODI";
+  return "Test";
+}
+
+function isMatchFinished(m) {
+  if (!m) return false;
+
+  const status = st(
+    m.status ||
+    m.audit?.status ||
+    ""
+  ).toLowerCase();
+
+  if (["completed", "finished", "result"].includes(status)) {
+    return true;
+  }
+
+  if (
+    m.match_finished === true ||
+    m.finished === true ||
+    m.completed === true ||
+    m.result_final === true
+  ) {
+    return true;
+  }
+
+  const ds = Array.isArray(m.deliveries) ? m.deliveries : [];
+  if (!ds.length) return false;
+
+  const last = ds[ds.length - 1] || {};
+
+  if (
+    last.match_end === 1 ||
+    last.match_finished === true ||
+    last.match_complete === true
+  ) {
+    return true;
+  }
+
+  const expectedInnings = careerFormat(m.format) === "Test" ? 4 : 2;
+  const inningsNumbers = [
+    ...new Set(ds.map(d => Number(d.innings || 1)))
+  ].sort((a, b) => a - b);
+
+  if (
+    inningsNumbers.length >= expectedInnings &&
+    Number(last.innings_end || 0) === 1
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function deriveCompletedMatchResult(m) {
+  const ds = Array.isArray(m?.deliveries) ? m.deliveries : [];
+  const teams = [st(m?.team_a), st(m?.team_b)];
+  const format = careerFormat(m?.format);
+
+  if (!ds.length) {
+    return { type: "NR", winner: "", loser: "", text: "No Result" };
+  }
+
+  const innings = {};
+
+  for (const d of ds) {
+    const n = Number(d?.innings || 1);
+    if (!innings[n]) innings[n] = { runs: 0, wickets: 0 };
+    innings[n].runs += Number(d?.runs || 0) + Number(d?.extra_runs || 0);
+    innings[n].wickets += Number(d?.wicket || 0);
+  }
+
+  const nums = Object.keys(innings).map(Number).sort((a, b) => a - b);
+  if (nums.length < 2) {
+    return { type: "NR", winner: "", loser: "", text: "No Result" };
+  }
+
+  const firstBatTeam =
+    st(ds.find(d => Number(d?.innings || 1) === nums[0])?.batsman_team) ||
+    st(m?.batting_first) ||
+    teams[0];
+
+  const secondBatTeam =
+    firstBatTeam === teams[0] ? teams[1] : teams[0];
+
+  if (format === "Test" && nums.length >= 4) {
+    const firstTotal = innings[nums[0]].runs + innings[nums[2]].runs;
+    const secondTotal = innings[nums[1]].runs + innings[nums[3]].runs;
+
+    if (firstTotal === secondTotal) {
+      return { type: "TIE", winner: "", loser: "", text: "Match tied" };
+    }
+
+    const winner = firstTotal > secondTotal ? firstBatTeam : secondBatTeam;
+    const loser = winner === firstBatTeam ? secondBatTeam : firstBatTeam;
+    const finalInnings = innings[nums[3]];
+    const fourthTarget = firstTotal + 1;
+
+    if (finalInnings.runs >= fourthTarget) {
+      const wicketsRemaining = Math.max(0, 10 - finalInnings.wickets);
+      return {
+        type: "WIN",
+        winner,
+        loser,
+        text: `${winner} won by ${wicketsRemaining} wickets`
+      };
+    }
+
+    return {
+      type: "WIN",
+      winner,
+      loser,
+      text: `${winner} won by ${Math.abs(firstTotal - secondTotal)} runs`
+    };
+  }
+
+  const first = innings[nums[0]].runs;
+  const second = innings[nums[1]].runs;
+
+  if (first === second) {
+    return { type: "TIE", winner: "", loser: "", text: "Match tied" };
+  }
+
+  const winner = second > first ? secondBatTeam : firstBatTeam;
+  const loser = winner === secondBatTeam ? firstBatTeam : secondBatTeam;
+
+  if (second > first) {
+    const wicketsRemaining = Math.max(0, 10 - innings[nums[1]].wickets);
+    return {
+      type: "WIN",
+      winner,
+      loser,
+      text: `${winner} won by ${wicketsRemaining} wickets`
+    };
+  }
+
+  return {
+    type: "WIN",
+    winner,
+    loser,
+    text: `${winner} won by ${Math.abs(first - second)} runs`
+  };
+}
+
+async function autoFinalizeFinishedMatches(rows) {
+  const result = [];
+
+  for (const row of rows) {
+    const m = row.match_json || {};
+    const status = st(row.status || m.status || "").toLowerCase();
+    const alreadyApproved = m.player_records_enabled === true;
+
+    if (status === "completed" && alreadyApproved) {
+      result.push(row);
+      continue;
+    }
+
+    if (!isMatchFinished(m)) {
+      result.push(row);
+      continue;
+    }
+
+    const matchResult = deriveCompletedMatchResult(m);
+    const now = new Date().toISOString();
+    const completed = {
+      ...m,
+      status: "completed",
+      winner: matchResult.winner || m.winner || "",
+      result:
+        matchResult.text ||
+        m.result ||
+        (matchResult.type === "WIN"
+          ? `${matchResult.winner} won`
+          : matchResult.type === "TIE"
+            ? "Match tied"
+            : "No Result"),
+      completed_at: m.completed_at || now,
+      player_records_enabled: true,
+      player_stats_approved: true,
+      player_stats_approved_at: now,
+      points_table_enabled: true
+    };
+
+    try {
+      const newRow = buildRow(completed);
+      const saved = await sb("matches", {
+        method: "POST",
+        headers: {
+          Prefer: "resolution=merge-duplicates,return=representation"
+        },
+        body: JSON.stringify(newRow)
+      });
+
+      const savedRow = Array.isArray(saved) ? saved[0] : saved;
+      result.push(savedRow || { ...row, match_json: completed, status: "completed" });
+    } catch (error) {
+      console.error("auto-finalize match failed:", error);
+      result.push(row);
+    }
+  }
+
+  return result;
+}
+
 export default async function handler(
   req,
   res
@@ -166,12 +377,16 @@ export default async function handler(
         getId(req);
 
       if (id) {
-        const rows =
+        let rows =
           await sb(
             `matches?id=eq.${encodeURIComponent(
               id
             )}&select=*`
           );
+
+        rows = await autoFinalizeFinishedMatches(
+          Array.isArray(rows) ? rows : []
+        );
 
         return res
           .status(200)
@@ -181,10 +396,14 @@ export default async function handler(
           );
       }
 
-      const rows =
+      let rows =
         await sb(
           "matches?select=*&order=created_at.desc"
         );
+
+      rows = await autoFinalizeFinishedMatches(
+        Array.isArray(rows) ? rows : []
+      );
 
       return res
         .status(200)
