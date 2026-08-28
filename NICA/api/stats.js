@@ -271,14 +271,24 @@ function matchIsCompleted(row) {
     the scoring system explicitly marks it completed.
     It never guesses completion from elapsed browser time.
   */
-  return (
+  const completed =
     st(
       row.status ||
       m.status ||
       m.audit?.status
     ).toLowerCase() ===
-    "completed"
-  );
+    "completed";
+
+  /*
+    A completed match does NOT automatically change player career
+    statistics. The admin must explicitly approve player stats from
+    the Admin panel.
+  */
+  const approved =
+    m.player_records_enabled === true ||
+    m.player_stats_approved === true;
+
+  return completed && approved;
 }
 
 function ensurePlayer(

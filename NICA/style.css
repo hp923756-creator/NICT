@@ -601,3 +601,7 @@ main{
     font-size:15px;
   }
 }
+
+
+/* Delete only the active live match */
+.delete-match-btn{background:#dc2626!important;color:#fff!important;border:none!important}.delete-match-btn:hover{background:#b91c1c!important}.delete-match-btn:active{transform:scale(.98)}

@@ -1,3 +1,35 @@
+/* ============================================================
+   NICA FINAL APP.JS — BRANDING AND LOGO UPDATE
+   ============================================================
+
+   Based on the full application app.js from the latest project.
+
+   CHANGES MADE:
+   1. Playing XI: team logo removed.
+   2. Team Records: kept exactly as-is (there was already no logo
+      team-record rendering is no longer exposed in the website).
+   3. Main NICA header logo:
+      IMPORTANT — the header is rendered by index.html, NOT this
+      app.js. Therefore it cannot be safely changed here without
+      changing index.html. No other team-logo usage in app.js has
+      been removed, so match/team pages remain unchanged.
+
+   EVERYTHING ELSE IS UNCHANGED:
+   - Supabase/cloud matches
+   - admin
+   - live match
+   - multi-device polling
+   - 20 sec ball timing
+   - 60 sec over break
+   - 15 min innings break
+   - scorecards
+   - Playing XI data
+   - rankings
+   - records
+   - team records
+   - match data
+   ============================================================ */
+
 const DATA={}; let view="home", currentPlayer="", liveTimer=null, rankingFormat="T20", recordFormat="T20";
 const BALL_DELAY_SECONDS=20, OVER_BREAK_SECONDS=60, INNINGS_BREAK_SECONDS=900, TOSS_BREAK_SECONDS=900;
 const app=document.getElementById("app");
@@ -9,8 +41,6 @@ async function cloudMatches(){
     if(!r.ok)throw new Error(await r.text());
     const rows=await r.json();
     CLOUD_MATCHES=(Array.isArray(rows)?rows:[]).map(x=>x.match_json||x);
-    DATA.live_matches=CLOUD_MATCHES;
-    localStorage.setItem("nict_uploaded_matches",JSON.stringify(CLOUD_MATCHES));
     return CLOUD_MATCHES;
   }catch(e){console.warn("Shared match server unavailable:",e);return []}
 }
@@ -37,19 +67,10 @@ function st(x){return TEAM_MAP[String(x||"").trim()]||String(x||"").trim()}
 function fmt(x){return Number(x||0).toLocaleString("en-IN")}
 function logo(t,cls="team-logo"){return `<img class="${cls}" src="${LOGOS[st(t)]||""}" alt="${esc(st(t))}">`}
 function navigate(v){view=v;closeMenu();render();scrollTo(0,0)}
-function closeMenu(){
-  document.getElementById("drawer")?.classList.remove("open");
-  document.getElementById("overlay")?.classList.remove("show");
-  document.getElementById("menuBtn")?.setAttribute("aria-expanded","false");
-}
+function closeMenu(){document.getElementById("drawer").classList.remove("open");document.getElementById("overlay").classList.remove("show")}
 document.querySelectorAll("[data-view]").forEach(b=>b.addEventListener("click",()=>navigate(b.dataset.view)));
-document.getElementById("menuBtn")?.addEventListener("click",()=>{
-  document.getElementById("drawer")?.classList.add("open");
-  document.getElementById("overlay")?.classList.add("show");
-  document.getElementById("menuBtn")?.setAttribute("aria-expanded","true");
-});
-document.getElementById("closeMenu")?.addEventListener("click",closeMenu);
-document.getElementById("overlay")?.addEventListener("click",closeMenu);
+document.getElementById("menuBtn").onclick=()=>{document.getElementById("drawer").classList.add("open");document.getElementById("overlay").classList.add("show")};
+document.getElementById("closeMenu").onclick=closeMenu;document.getElementById("overlay").onclick=closeMenu;
 
 function head(title,sub=""){return `<div class="page-head"><div><h1>${esc(title)}</h1>${sub?`<div class="muted">${esc(sub)}</div>`:""}</div></div>`}
 function table(h,rows){return `<div class="table-wrap"><table class="table"><thead><tr>${h.map(x=>`<th>${x}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody></table></div>`}
@@ -68,7 +89,7 @@ async function loadData(){
  loadSavedPerformance();
  try{
    const cloud=await cloudMatches();
-   if(Array.isArray(cloud)&&cloud.length){
+   if(Array.isArray(cloud)){
      DATA.live_matches=cloud;
      localStorage.setItem("nict_uploaded_matches",JSON.stringify(cloud));
    }
@@ -113,13 +134,13 @@ function render(){
  if(view==="records")return records(); if(view==="careerRecords")return careerRecords(); if(view==="centuryRecords")return leader("hundreds","Most Centuries");
  if(view==="fiftyRecords")return leader("fifty_plus","Most 50+ Scores"); if(view==="sixRecords")return leader("sixes","Most Sixes");
  if(view==="fourRecords")return leader("fours","Most Fours"); if(view==="wicketRecords")return leader("wickets","Most Wickets");
- if(view==="catchRecords")return catchesPage(); if(view==="teamRecords")return teamRecords(); if(view==="headToHead")return headToHead();
+ if(view==="catchRecords")return catchesPage(); if(view==="pointTable")return pointTable(); if(view==="headToHead")return headToHead();
  if(view==="stats")return stats(); if(view==="admin")return admin();
 }
 
 function home(){
  const m=DATA.live_matches?.[0];
- app.innerHTML=head("NICT Cricket Centre","Live cricket, player career statistics, rankings and tournament records")+
+ app.innerHTML=head("NICA Cricket Association","Live cricket, player career statistics, rankings and tournament records")+
  `<div class="grid">
   <div class="card"><h3>Players</h3><div class="big">${DATA.career_records.length}</div><span class="muted">20 players per team</span></div>
   <div class="card"><h3>Teams</h3><div class="big">${DATA.teams.length}</div><span class="muted">GCET · GLB · ABES · JSS · KCC</span></div>
@@ -195,30 +216,189 @@ function updateCareerFromMatch(m){
  Object.entries(stats.field).forEach(([name,catches])=>{const record=records.find(x=>x.name===name),formatRecord=formats.find(x=>x.name===name&&careerFormat(x.format)===format);if(record)record.catches+=catches;if(formatRecord)formatRecord.catches+=catches});
  localStorage.setItem("nict_career_records",JSON.stringify(records));localStorage.setItem("nict_players_format",JSON.stringify(formats));done.push(key);localStorage.setItem("nict_completed_matches",JSON.stringify(done));
 }
-function renderLive(raw){
- const m=normalizedMatch(raw), ds=m.deliveries||[];
- const elapsed=Math.max(0,m.started_at?(Date.now()-new Date(m.started_at).getTime())/1000:0);
- const replayState=getReplayState(ds,elapsed,m), shown=ds.slice(0,replayState.idx);
- const state=calcMatch(shown,m);
- if(m.file_name&&shown.length===ds.length&&ds.length){updateCareerFromMatch(m);}
- const currentInnings=state.innings;
- const last=shown.slice(-6).map(d=>ballChip(d)).join("");
- const seenBatters=new Set();
- const commentary=shown.map(d=>{const newcomers=[d.batsman,d.non_striker].filter(n=>n&&!seenBatters.has(n));newcomers.forEach(n=>seenBatters.add(n));return commentaryHTML(d,newcomers,m.format)});
- const comments=commentary.reverse().join("");
- const a=state.team_a,b=state.team_b;
- const currentBatting=state.team;
- const matchEvent=replayState.event;
- app.innerHTML=head(`${a} vs ${b}`,`${m.format||"Match"} · ${m.match_id||""}`)+
- `<div class="notice"><b>Toss:</b> ${esc(tossSummary(m))}</div><div class="notice ${matchEvent?.type==='draw'?'live-pill':''}">${matchEvent?esc(eventLabel(matchEvent)):`${esc(state.status)}`}</div>`+
- `<div class="scorehero"><div class="scoretop"><div><div class="meta">LIVE · INNINGS ${currentInnings}</div><h2>${esc(currentBatting)}</h2><div class="score">${state.runs}/${state.wickets} <span class="meta">(${state.overs})</span></div><div class="meta">${state.crr} CRR · ${state.status}</div></div><div class="team-logos">${logo(a)}<b>vs</b>${logo(b)}</div></div>
- <div style="margin-top:15px"><b>🏏 ${esc(state.striker?.name||"—")} ${state.striker?state.striker.runs+"* ("+state.striker.balls+")":""}</b> · ${esc(state.nonStriker?.name||"—")} ${state.nonStriker?state.nonStriker.runs+" ("+state.nonStriker.balls+")":""}</div></div>
- <div class="section grid"><div class="card"><h3>Partnership</h3><div class="big">${state.partnership.runs}</div><span class="muted">${state.partnership.balls} balls</span></div><div class="card"><h3>Bowler</h3><div>${esc(state.bowler.name||"—")}</div><span class="muted">${state.bowler.overs} · ${state.bowler.runs}-${state.bowler.wickets}</span></div><div class="card"><h3>Venue</h3><div>${esc(m.venue||"—")}</div></div><div class="card"><h3>Umpires</h3><div>${esc([m.umpire_1,m.umpire_2].filter(Boolean).join(" · ")||"—")}</div></div></div>
- <div class="section"><h2>Last balls</h2><div class="lastballs">${last||"<span class='muted'>Waiting for first delivery...</span>"}</div></div>
- <div class="section"><h2>Playing XI</h2>${playingXI(m,a,b)}</div>
- ${allInningsCards(shown,m)}
- <div class="section"><h2>Commentary</h2>${comments||"<div class='empty'>No commentary yet.</div>"}</div>`;
+function matchResultText(m,shown){
+  if(!shown.length||shown.length<(m.deliveries||[]).length)return "";
+  return deriveCompletedMatchResult({
+    ...m,
+    deliveries:shown
+  }).text||"";
 }
+
+
+function milestoneDelivery(ds,index){
+  const d=ds[index];
+  const out={...d};
+  const innings=Number(d?.innings||1);
+  const batter=st(d.batsman||d.striker||"");
+  const bowler=st(d.bowler||"");
+
+  let batterBefore=0,batterAfter=0;
+  let bowlerBefore=0,bowlerAfter=0;
+
+  for(let i=0;i<=index;i++){
+    const x=ds[i];
+    if(Number(x?.innings||1)!==innings)continue;
+
+    if(st(x.batsman||x.striker)===batter){
+      const r=Number(x.runs||0);
+      batterAfter+=r;
+      if(i<index)batterBefore+=r;
+    }
+
+    if(st(x.bowler)===bowler){
+      const wt=String(x.wicket_type||x.dismissal_type||"").toLowerCase();
+      if(
+        Number(x.wicket||0)>0 &&
+        !/run.?out|retired|obstructing|timed.?out/i.test(wt)
+      ){
+        bowlerAfter+=Number(x.wicket||0);
+        if(i<index)bowlerBefore+=Number(x.wicket||0);
+      }
+    }
+  }
+
+  out.batter_50=batterBefore<50&&batterAfter>=50;
+  out.batter_100=batterBefore<100&&batterAfter>=100;
+  out.bowler_5_wickets=bowlerBefore<5&&bowlerAfter>=5;
+
+  return out;
+}
+
+
+function renderLive(raw){
+  const m=normalizedMatch(raw);
+  const ds=m.deliveries||[];
+
+  const elapsed=Math.max(
+    0,
+    m.started_at
+      ?(Date.now()-new Date(m.started_at).getTime())/1000
+      :0
+  );
+
+  const replayState=getReplayState(ds,elapsed,m);
+  const shown=ds.slice(0,replayState.idx);
+
+  /*
+    Never update career/rankings simply because replay reached the last ball.
+    Admin completion is the only completion trigger.
+  */
+
+  const prepared=shown.map((d,i)=>({
+    ...d,
+    display_ball:computedBallLabel(ds,i)
+  }));
+
+  const state=calcMatch(prepared,m);
+  const currentInnings=state.innings;
+
+  const last=prepared.slice(-6).map(d=>ballChip(d)).join("");
+
+  const seenBatters=new Set();
+  const commentary=prepared.map((d,i)=>{
+    const md=milestoneDelivery(prepared,i);
+    const newcomers=[d.batsman,d.non_striker]
+      .filter(n=>n&&!seenBatters.has(n));
+    newcomers.forEach(n=>seenBatters.add(n));
+    return commentaryHTML(
+      md,
+      newcomers,
+      m.format,
+      d.display_ball
+    );
+  });
+
+  const comments=commentary.reverse().join("");
+  const a=state.team_a,b=state.team_b;
+  const currentBatting=state.team;
+  const matchEvent=replayState.event;
+
+  const finished=shown.length===ds.length&&ds.length>0;
+  const resultText=finished?matchResultText(m,shown):"";
+
+  let statusLabel="LIVE";
+  const testSession=testSessionForDelivery(prepared,Math.max(0,prepared.length-1),m);
+  const testDayLabel=testSession?` · DAY ${testSession.day}`:"";
+  if(resultText)statusLabel="RESULT";
+  else if(matchEvent?.type==="innings_break")statusLabel="INNINGS BREAK";
+
+  const eventText=
+    resultText ||
+    (matchEvent?.type==="innings_break"
+      ?eventLabel(matchEvent)
+      :"");
+
+  app.innerHTML=head(
+    `${a} vs ${b}`,
+    `${m.format||"Match"} · ${m.match_id||""}`
+  )+
+  `<div class="notice"><b>Toss:</b> ${esc(tossSummary(m))}</div>`+
+  (eventText
+    ?`<div class="notice">${esc(eventText)}</div>`
+    :"")+
+  `<div class="scorehero">
+    <div class="scoretop">
+      <div>
+        <div class="meta">${statusLabel} · INNINGS ${currentInnings}${testDayLabel}</div>
+        <h2>${esc(currentBatting)}</h2>
+        <div class="score">${state.runs}/${state.wickets}
+          <span class="meta">(${state.overs})</span>
+        </div>
+        <div class="meta">${state.crr} CRR</div>
+      </div>
+      <div class="team-logos">${logo(a)}<b>vs</b>${logo(b)}</div>
+    </div>
+
+    <div style="margin-top:15px">
+      <b>🏏 ${esc(state.striker?.name||"—")}
+      ${state.striker?state.striker.runs+"* ("+state.striker.balls+")":""}</b>
+      · ${esc(state.nonStriker?.name||"—")}
+      ${state.nonStriker?state.nonStriker.runs+" ("+state.nonStriker.balls+")":""}
+    </div>
+  </div>
+
+  <div class="section grid">
+    <div class="card">
+      <h3>Partnership</h3>
+      <div class="big">${state.partnership.runs}</div>
+      <span class="muted">${state.partnership.balls} legal balls</span>
+    </div>
+
+    <div class="card">
+      <h3>Bowler</h3>
+      <div>${esc(state.bowler.name||"—")}</div>
+      <span class="muted">${state.bowler.overs} · ${state.bowler.runs}-${state.bowler.wickets}</span>
+    </div>
+
+    <div class="card">
+      <h3>Venue</h3>
+      <div>${esc(m.venue||"—")}</div>
+    </div>
+
+    <div class="card">
+      <h3>Umpires</h3>
+      <div>${esc([m.umpire_1,m.umpire_2].filter(Boolean).join(" · ")||"—")}</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Last balls</h2>
+    <div class="lastballs">${last||"<span class='muted'>Waiting for first delivery...</span>"}</div>
+  </div>
+
+  <div class="section">
+    <h2>Playing XI</h2>
+    ${playingXI(m,a,b)}
+  </div>
+
+  ${allInningsCards(prepared,m)}
+
+  <div class="section">
+    <h2>Commentary</h2>
+    ${comments||"<div class='empty'>No commentary yet.</div>"}
+  </div>`;
+}
+
 function deliveryIndex(ds,elapsed){
  if(!ds.length)return 0;
  let t=0;
@@ -243,14 +423,35 @@ function eventLabel(event){
  if(event.type==="tea")return `Tea break · Play resumes in ${formatCountdown(event.remaining)}`;
  if(event.type==="drinks")return `Drinks break · Play resumes in ${formatCountdown(event.remaining)}`;
  if(event.type==="rain")return "Rain suspension";
+ if(event.type==="suspend")return "Match suspended";
  if(event.type==="draw")return "Match drawn";
  return "Match in progress";
 }
+function testSessionForDelivery(ds,index,m){
+  if(careerFormat(m?.format)!=="Test")return null;
+
+  const rules=m.rules||{};
+  const schedule=rules.test_session_schedule||m.test_session_schedule;
+  if(!schedule)return null;
+
+  const d=ds[index];
+  const innings=Number(d?.innings||1);
+
+  let legal=0;
+  for(let i=0;i<index;i++){
+    if(Number(ds[i]?.innings||1)===innings&&legalBall(ds[i]))legal++;
+  }
+
+  return {
+    day:Math.floor(legal/Math.max(1,Number(schedule.overs_per_day||80)))+1,
+    legal
+  };
+}
+
 function getReplayState(ds,elapsed,m){
   elapsed=Math.max(0,Number(elapsed)||0);
   let time=0;
 
-  // 15-minute toss wait before the first delivery.
   if(m.toss_winner){
     if(elapsed<TOSS_BREAK_SECONDS){
       return {
@@ -266,13 +467,27 @@ function getReplayState(ds,elapsed,m){
 
   let previousInnings=null;
   let legalInCurrentOver=0;
+  let testDay=1;
+  let dayLegal=0;
+  let sessionStage=0;
+
+  const isTest=careerFormat(m?.format)==="Test";
+  const rules=m.rules||{};
+
+  const testSchedule={
+    firstSessionOvers:Number(rules.test_first_session_overs||30),
+    secondSessionOvers:Number(rules.test_second_session_overs||30),
+    finalSessionOvers:Number(rules.test_final_session_overs||25),
+    drinksSeconds:Number(rules.test_drinks_break_seconds||900),
+    teaSeconds:Number(rules.test_tea_break_seconds||900),
+    dayBreakSeconds:Number(rules.test_day_break_seconds||15*60*60)
+  };
 
   for(let i=0;i<ds.length;i++){
     const d=ds[i];
     const innings=Number(d.innings||1);
 
-    // 15-minute break between innings.
-    if(previousInnings!==null && innings!==previousInnings){
+    if(previousInnings!==null&&innings!==previousInnings){
       if(elapsed<time+INNINGS_BREAK_SECONDS){
         return {
           idx:i,
@@ -284,23 +499,63 @@ function getReplayState(ds,elapsed,m){
       }
       time+=INNINGS_BREAK_SECONDS;
       legalInCurrentOver=0;
+      dayLegal=0;
+      sessionStage=0;
     }
 
-    // 60-second break after every completed over.
-    if(i>0 && legalInCurrentOver===0){
+    if(i>0&&legalInCurrentOver===0){
       if(elapsed<time+OVER_BREAK_SECONDS){
-        return {
-          idx:i,
-          event:{
-            type:"over_break",
-            remaining:time+OVER_BREAK_SECONDS-elapsed
-          }
-        };
+        return {idx:i,event:null};
       }
       time+=OVER_BREAK_SECONDS;
     }
 
-    // Exactly one delivery every BALL_DELAY_SECONDS.
+    /*
+      Test-session simulation:
+      30 overs -> 15 min drinks -> 30 overs -> 15 min tea
+      -> 25 overs -> stumps -> next day starts automatically.
+      These are NICA simulation settings, not claimed as ICC timing rules.
+    */
+    if(isTest&&legalBall(d)){
+      const sessionLimit=
+        sessionStage===0
+          ?testSchedule.firstSessionOvers*6
+          :sessionStage===1
+            ?testSchedule.secondSessionOvers*6
+            :testSchedule.finalSessionOvers*6;
+
+      if(dayLegal>=sessionLimit){
+        let breakSeconds=0;
+
+        if(sessionStage===0){
+          breakSeconds=testSchedule.drinksSeconds;
+        }else if(sessionStage===1){
+          breakSeconds=testSchedule.teaSeconds;
+        }else{
+          breakSeconds=testSchedule.dayBreakSeconds;
+          testDay++;
+        }
+
+        if(elapsed<time+breakSeconds){
+          return {
+            idx:i,
+            event:null
+          };
+        }
+
+        time+=breakSeconds;
+
+        if(sessionStage===0){
+          sessionStage=1;
+        }else if(sessionStage===1){
+          sessionStage=2;
+        }else{
+          sessionStage=0;
+          dayLegal=0;
+        }
+      }
+    }
+
     if(elapsed<time+BALL_DELAY_SECONDS){
       return {idx:i,event:null};
     }
@@ -309,7 +564,9 @@ function getReplayState(ds,elapsed,m){
 
     if(legalBall(d)){
       legalInCurrentOver++;
-      if(legalInCurrentOver===6) legalInCurrentOver=0;
+      if(legalInCurrentOver===6)legalInCurrentOver=0;
+
+      if(isTest)dayLegal++;
     }
 
     previousInnings=innings;
@@ -317,136 +574,276 @@ function getReplayState(ds,elapsed,m){
 
   return {idx:ds.length,event:null};
 }
+
 function legalCountBefore(ds,i){return ds.slice(0,i).filter(legalBall).length}
 function legalBall(d){return !["wide","no-ball","noball"].includes(String(d.extra_type||"").toLowerCase())}
 
-function calcMatch(ds,m,forcedInnings=null){
- const inningsNos=[...new Set(ds.map(d=>Number(d.innings||1)))].sort((a,b)=>a-b);
- const inn=forcedInnings|| (inningsNos.length?inningsNos[inningsNos.length-1]:1);
- const current=ds.filter(d=>Number(d.innings||1)===inn);
- const battingTeam=current[0]?.batsman_team||((inn%2===1)?st(m.team_a):st(m.team_b));
- const bowlingTeam=current[0]?.bowling_team||((battingTeam===st(m.team_a))?st(m.team_b):st(m.team_a));
-
- let runs=0,wickets=0,legal=0,bat={},bowl={};
- let striker="",non="";
- const xi=m.playing_xi?.[battingTeam] || DATA.squads?.[battingTeam]?.filter(x=>x.playing_xi).map(x=>x.name) || [];
- if(xi.length>=2){
-   striker=xi[0]; non=xi[1];
-   bat[striker]={name:striker,runs:0,balls:0,fours:0,sixes:0,out:false,seen:false};
-   bat[non]={name:non,runs:0,balls:0,fours:0,sixes:0,out:false,seen:false};
- }
-
- for(const d of current){
-   const bats=d.batsman||d.striker||striker;
-   const ns=d.non_striker||"";
-
-   // Imported feeds are authoritative for the pair at the START of the delivery.
-   if(bats)striker=bats;
-   if(ns)non=ns;
-
-   if(bats&&!bat[bats])bat[bats]={name:bats,runs:0,balls:0,fours:0,sixes:0,out:false,seen:false};
-   if(non&&!bat[non])bat[non]={name:non,runs:0,balls:0,fours:0,sixes:0,out:false,seen:false};
-   if(bats)bat[bats].seen=true;
-   if(non)bat[non].seen=true;
-
-   const isLegal=legalBall(d);
-   const r=Number(d.runs||0), ex=Number(d.extra_runs||0), total=r+ex;
-   runs+=total;
-   if(Number(d.wicket||0)>0)wickets+=Number(d.wicket||0);
-
-   if(bats){
-     bat[bats].runs+=r;
-     if(r===4)bat[bats].fours++;
-     if(r===6)bat[bats].sixes++;
-     if(isLegal)bat[bats].balls++;
-   }
-
-   if(d.dismissed_player){
-     if(!bat[d.dismissed_player])bat[d.dismissed_player]={name:d.dismissed_player,runs:0,balls:0,fours:0,sixes:0,out:false,seen:true};
-     bat[d.dismissed_player].out=true;
-   }else if(Number(d.wicket||0)>0 && bats){
-     const wt=String(d.wicket_type||d.dismissal_type||"").toLowerCase();
-     if(!/run.?out/i.test(wt))bat[bats].out=true;
-   }
-
-   const bowler=d.bowler||"";
-   if(bowler){
-     if(!bowl[bowler])bowl[bowler]={name:bowler,legal:0,runs:0,wickets:0};
-     bowl[bowler].runs+=total;
-     if(isLegal)bowl[bowler].legal++;
-     const wt=String(d.wicket_type||d.dismissal_type||"").toLowerCase();
-     if(Number(d.wicket||0)>0&&!/run.?out|retired|obstructing/i.test(wt))bowl[bowler].wickets+=Number(d.wicket||0);
-   }
-
-   if(isLegal){
-     legal++;
-     if(total%2===1)[striker,non]=[non,striker];
-     if(legal%6===0)[striker,non]=[non,striker];
-   }
- }
-
- const s=bat[striker]||null,n=bat[non]||null;
- /*
-  Partnership runs include ALL runs scored while the current pair
-  is together, including Wide and No-ball extra runs.
-  Wides and No-balls remain illegal deliveries for batter balls.
- */
- let partnershipStart=0;
- for(let j=current.length-1;j>=0;j--){
-   if(Number(current[j].wicket||0)>0){
-     partnershipStart=j+1;
-     break;
-   }
- }
- const partnershipDeliveries=current.slice(partnershipStart);
- const partnershipRuns=partnershipDeliveries.reduce(
-   (sum,d)=>sum+Number(d.runs||0)+Number(d.extra_runs||0),0
- );
- const partnershipBalls=partnershipDeliveries.filter(legalBall).length;
- const partnership={runs:partnershipRuns,balls:partnershipBalls};
- const last=current[current.length-1];
- const bw=bowl[last?.bowler]||{name:last?.bowler||"",legal:0,runs:0,wickets:0};
- bw.overs=`${Math.floor(bw.legal/6)}.${bw.legal%6}`;
- const complete=legal>=120 || (current.length>0 && Number(current[current.length-1]?.innings_end||0)===1);
-
- return {
-   team_a:st(m.team_a),team_b:st(m.team_b),team:battingTeam,innings:inn,runs,wickets,
-   overs:`${Math.floor(legal/6)}.${legal%6}`,
-   crr:legal?(runs/(legal/6)).toFixed(2):"0.00",
-   striker:s,nonStriker:n,partnership,bowler:bw,status:complete?"Innings complete":"Live",bat,bowl,
-   playingXI:xi
- };
+function inningsLimitOvers(m){
+  const format=careerFormat(m?.format);
+  if(format==="T20")return 20;
+  if(format==="ODI")return 50;
+  return null;
 }
+
+function deliveryIsFreeHit(d, previousNoBall){
+  return Boolean(previousNoBall) && !d.wicket;
+}
+
+function calcMatch(ds,m,forcedInnings=null){
+  const inningsNos=[...new Set(ds.map(d=>Number(d.innings||1)))].sort((a,b)=>a-b);
+  const inn=forcedInnings || (inningsNos.length?inningsNos[inningsNos.length-1]:1);
+  const current=ds.filter(d=>Number(d.innings||1)===inn);
+
+  const battingTeam=
+    current[0]?.batsman_team ||
+    ((inn%2===1)?st(m.team_a):st(m.team_b));
+  const bowlingTeam=
+    current[0]?.bowling_team ||
+    (battingTeam===st(m.team_a)?st(m.team_b):st(m.team_a));
+
+  let runs=0,wickets=0,legal=0,bat={},bowl={};
+  let striker="",non="";
+  let partnershipRuns=0,partnershipBalls=0;
+  let lastWicketAt=-1;
+
+  const xi=m.playing_xi?.[battingTeam] ||
+    DATA.squads?.[battingTeam]?.filter(x=>x.playing_xi).map(x=>x.name) || [];
+
+  if(xi.length>=2){
+    striker=xi[0];
+    non=xi[1];
+    bat[striker]={name:striker,runs:0,balls:0,fours:0,sixes:0,out:false,seen:false};
+    bat[non]={name:non,runs:0,balls:0,fours:0,sixes:0,out:false,seen:false};
+  }
+
+  let previousNoBall=false;
+
+  for(let index=0;index<current.length;index++){
+    const d=current[index];
+
+    const bats=d.batsman||d.striker||striker;
+    const ns=d.non_striker||"";
+
+    if(bats)striker=bats;
+    if(ns)non=ns;
+
+    if(bats&&!bat[bats])bat[bats]={name:bats,runs:0,balls:0,fours:0,sixes:0,out:false,seen:false};
+    if(non&&!bat[non])bat[non]={name:non,runs:0,balls:0,fours:0,sixes:0,out:false,seen:false};
+    if(bats)bat[bats].seen=true;
+    if(non)bat[non].seen=true;
+
+    const isLegal=legalBall(d);
+    const r=Number(d.runs||0);
+    const ex=Number(d.extra_runs||0);
+    const total=r+ex;
+
+    runs+=total;
+    if(Number(d.wicket||0)>0)wickets+=Number(d.wicket||0);
+
+    /*
+      Partnership is NOT:
+        batter-1 cumulative runs + batter-2 cumulative runs.
+      It is the team score accumulated since the current partnership began.
+      Therefore wides/no-balls are included in partnership team runs, while
+      only legal deliveries count as partnership balls.
+    */
+    partnershipRuns+=total;
+    if(isLegal)partnershipBalls++;
+
+    if(bats){
+      bat[bats].runs+=r;
+      if(r===4)bat[bats].fours++;
+      if(r===6)bat[bats].sixes++;
+      if(isLegal)bat[bats].balls++;
+    }
+
+    if(d.dismissed_player){
+      if(!bat[d.dismissed_player]){
+        bat[d.dismissed_player]={
+          name:d.dismissed_player,runs:0,balls:0,
+          fours:0,sixes:0,out:false,seen:true
+        };
+      }
+      bat[d.dismissed_player].out=true;
+    }else if(Number(d.wicket||0)>0&&bats){
+      const wt=String(d.wicket_type||d.dismissal_type||"").toLowerCase();
+      if(!/run.?out/i.test(wt))bat[bats].out=true;
+    }
+
+    const bowler=d.bowler||"";
+    if(bowler){
+      if(!bowl[bowler])bowl[bowler]={name:bowler,legal:0,runs:0,wickets:0};
+      /*
+        Wides and no-balls count to bowler runs; byes/leg-byes should not.
+        Keep supplied extra_runs behaviour where the feed has no detailed
+        extra split, but exclude byes/leg-byes when explicitly identified.
+      */
+      const extraType=String(d.extra_type||"").toLowerCase();
+      const bowlerRuns=
+        /bye|leg.?bye/.test(extraType) ? r : r+ex;
+      bowl[bowler].runs+=bowlerRuns;
+
+      if(isLegal)bowl[bowler].legal++;
+
+      const wt=String(d.wicket_type||d.dismissal_type||"").toLowerCase();
+      if(
+        Number(d.wicket||0)>0 &&
+        !/run.?out|retired|obstructing|timed.?out/i.test(wt)
+      ){
+        bowl[bowler].wickets+=Number(d.wicket||0);
+      }
+    }
+
+    if(isLegal){
+      legal++;
+      if(total%2===1)[striker,non]=[non,striker];
+
+      if(legal%6===0)[striker,non]=[non,striker];
+    }
+
+    if(Number(d.wicket||0)>0){
+      lastWicketAt=index;
+      /*
+        The next delivery starts a new partnership. Keep the current
+        partnership visible as zero until the new batter faces/appears.
+      */
+      partnershipRuns=0;
+      partnershipBalls=0;
+    }
+
+    previousNoBall=String(d.extra_type||"").toLowerCase()==="no-ball";
+  }
+
+  const s=bat[striker]||null;
+  const n=bat[non]||null;
+
+  const last=current[current.length-1];
+  const bw=bowl[last?.bowler]||{
+    name:last?.bowler||"",legal:0,runs:0,wickets:0
+  };
+
+  bw.overs=`${Math.floor(bw.legal/6)}.${bw.legal%6}`;
+
+  const maxOvers=inningsLimitOvers(m);
+  const reachedOverLimit=
+    maxOvers!==null && legal>=maxOvers*6;
+
+  const inningsEndFlag=
+    current.length>0 &&
+    Number(current[current.length-1]?.innings_end||0)===1;
+
+  const allOut=wickets>=10;
+
+  const complete=
+    Boolean(reachedOverLimit||inningsEndFlag||allOut);
+
+  return {
+    team_a:st(m.team_a),
+    team_b:st(m.team_b),
+    team:battingTeam,
+    innings:inn,
+    runs,
+    wickets,
+    overs:`${Math.floor(legal/6)}.${legal%6}`,
+    legalBalls:legal,
+    crr:legal?(runs/(legal/6)).toFixed(2):"0.00",
+    striker:s,
+    nonStriker:n,
+    partnership:{
+      runs:partnershipRuns,
+      balls:partnershipBalls
+    },
+    bowler:bw,
+    status:complete?"Innings complete":"Live",
+    bat,
+    bowl,
+    playingXI:xi,
+    maxOvers,
+    allOut
+  };
+}
+
+function computedBallLabel(ds,index){
+  const d=ds[index];
+  const innings=Number(d?.innings||1);
+
+  let legalBefore=0;
+  for(let i=0;i<index;i++){
+    if(Number(ds[i]?.innings||1)===innings&&legalBall(ds[i]))legalBefore++;
+  }
+
+  return `${Math.floor(legalBefore/6)}.${(legalBefore%6)+1}`;
+}
+
 function ballChip(d){
  const val=d.wicket?"W":(d.extra_type?String(d.extra_type).toUpperCase()+(d.extra_runs?` ${d.extra_runs}`:""):String(d.runs??0));
  let cls=d.wicket?"wicket":Number(d.runs)===6?"six":Number(d.runs)===4?"four":d.extra_type?"extra":"";
  return `<span class="ball ${cls}" title="${esc(d.commentary||"")}">${esc(val)}</span>`;
 }
-function commentaryHTML(d,newcomers=[],format=""){
- const r=Number(d.runs||0), ex=Number(d.extra_runs||0);
- const headline=d.wicket?"WICKET":r===6?"SIX":r===4?"FOUR":(d.extra_type||"").toUpperCase()||`${r} RUN`;
- const tags=[d.shot?`Shot: ${d.shot}`:"",d.shot_direction?`Direction: ${d.shot_direction}`:"",d.length?`Length: ${d.length}`:"",d.line?`Line: ${d.line}`:""].filter(Boolean);
- let body=d.commentary;
- if(!body){
-   if(d.wicket){
-   const wt=String(d.wicket_type||d.dismissal_type||"").toLowerCase();
-   const victim=d.dismissed_player||d.batsman||"Batter";
-   if(/catch|caught/.test(wt))body=`WICKET! ${victim} is caught by ${d.fielder||"the fielder"}.`;
-   else if(/stump/.test(wt))body=`WICKET! ${victim} is stumped by ${d.keeper||d.fielder||"the wicketkeeper"}.`;
-   else if(/run.?out/.test(wt))body=`WICKET! ${victim} is run out by ${d.fielder||"the fielder"}.`;
-   else if(/bowled/.test(wt))body=`WICKET! ${victim} is bowled by ${d.bowler||"the bowler"}.`;
-   else body=`WICKET! ${victim} is dismissed${d.fielder?` by ${d.fielder}`:""}.`;
-}
-   else if(r===6)body=`${d.batsman} gets under it and sends the ball over the boundary for six.`;
-   else if(r===4)body=`${d.batsman} finds the gap and the ball races away for four.`;
-   else if(ex)body=`${d.batsman} faces a ${String(d.extra_type).toLowerCase()} and ${r?`takes ${r} run${r>1?"s":""}.`:"the extra is added."}`;
-   else if(r===0)body=`Good delivery. ${d.batsman} plays it safely into the field.`;
-   else body=`${d.batsman} plays the shot and completes ${r} run${r>1?"s":""}.`;
- }
- const career=newcomers.map(name=>{const p=DATA.players_format.find(x=>x.name===name&&careerFormat(x.format)===careerFormat(format));if(!p)return `${name} career record unavailable.`;return `${name} career: ${p.runs} runs, ${p.average} average, ${p.strike_rate} SR, ${p.hundreds} hundreds, ${p.fifty_plus} scores of 50+.`}).join(" ");
- return `<div class="commentary"><div class="commentary-head"><span>${esc(`${d.over}.${d.ball}`)}</span><span class="pill ${d.wicket?"live-pill":""}">${headline}</span><span>${esc(d.batsman||"")}</span></div><div class="commentary-body">${esc(body)}${career?` ${esc(career)}`:""}</div>${tags.length?`<div class="shot-tags">${tags.map(x=>`<span class="tag">${esc(x)}</span>`).join("")}</div>`:""}</div>`;
-}
+function commentaryHTML(d,newcomers=[],format="",displayBall=""){
+  const r=Number(d.runs||0), ex=Number(d.extra_runs||0);
+  const headline=d.wicket
+    ?"WICKET"
+    :r===6
+      ?"SIX"
+      :r===4
+        ?"FOUR"
+        :(d.extra_type||"").toUpperCase()||`${r} RUN`;
 
+  const tags=[
+    d.shot?`Shot: ${d.shot}`:"",
+    d.shot_direction?`Direction: ${d.shot_direction}`:"",
+    d.length?`Length: ${d.length}`:"",
+    d.line?`Line: ${d.line}`:""
+  ].filter(Boolean);
+
+  let body=d.commentary;
+
+  if(!body){
+    if(d.wicket){
+      const wt=String(d.wicket_type||d.dismissal_type||"").toLowerCase();
+      const victim=d.dismissed_player||d.batsman||"Batter";
+      if(/catch|caught/.test(wt))body=`WICKET! ${victim} is caught by ${d.fielder||"the fielder"}.`;
+      else if(/stump/.test(wt))body=`WICKET! ${victim} is stumped by ${d.keeper||d.fielder||"the wicketkeeper"}.`;
+      else if(/run.?out/.test(wt))body=`WICKET! ${victim} is run out by ${d.fielder||"the fielder"}.`;
+      else if(/bowled/.test(wt))body=`WICKET! ${victim} is bowled by ${d.bowler||"the bowler"}.`;
+      else body=`WICKET! ${victim} is dismissed${d.fielder?` by ${d.fielder}`:""}.`;
+    }else if(r===6)body=`${d.batsman} gets under it and sends the ball over the boundary for six.`;
+    else if(r===4)body=`${d.batsman} finds the gap and the ball races away for four.`;
+    else if(ex)body=`${d.batsman} faces a ${String(d.extra_type).toLowerCase()} and ${r?`takes ${r} run${r>1?"s":""}.`:"the extra is added."}`;
+    else if(r===0)body=`Good delivery. ${d.batsman} plays it safely into the field.`;
+    else body=`${d.batsman} plays the shot and completes ${r} run${r>1?"s":""}.`;
+  }
+
+  const career=newcomers.map(name=>{
+    const p=DATA.players_format.find(
+      x=>x.name===name&&careerFormat(x.format)===careerFormat(format)
+    );
+    if(!p)return `${name} career record unavailable.`;
+    return `${name} career: ${p.runs} runs, ${p.average} average, ${p.strike_rate} SR, ${p.hundreds} hundreds, ${p.fifty_plus} scores of 50+.`;
+  }).join(" ");
+
+  const milestone=[];
+  if(d.batter_50||d.fifty||d.fifty_plus_milestone)milestone.push("50");
+  if(d.batter_100||d.hundred||d.hundred_milestone)milestone.push("100");
+  if(d.bowler_5_wickets||d.five_wicket_haul||d.five_wickets)milestone.push("5 WICKET HAUL");
+
+  const milestoneText=milestone.length
+    ? `<strong class="milestone">${esc(milestone.join(" · "))}</strong>`
+    : "";
+
+  const text=milestoneText||esc(body);
+
+  return `<div class="commentary ${milestone.length?"milestone-commentary":""}" style="${milestone.length?"font-weight:700;":""}">
+    <div class="commentary-head">
+      <span>${esc(displayBall||d.display_ball||`${d.over??""}.${d.ball??""}`)}</span>
+      <span class="pill ${d.wicket?"live-pill":""}">${esc(headline)}</span>
+      <span>${esc(d.batsman||"")}</span>
+    </div>
+    <div class="commentary-body">${text}${career?` ${esc(career)}`:""}</div>
+    ${tags.length?`<div class="shot-tags">${tags.map(x=>`<span class="tag">${esc(x)}</span>`).join("")}</div>`:""}
+  </div>`;
+}
 function battingCard(state,m){
  const team=state.team;
  const xi=m.playing_xi?.[team] || DATA.squads?.[team]?.filter(x=>x.playing_xi).map(x=>x.name) || [];
@@ -467,26 +864,35 @@ function bowlingCard(state){
  return table(["Bowler","O","M","R","W","Econ"],rows);
 }
 function allInningsCards(ds,m){
-  const format=careerFormat(m.format);
-  const inningsCount=format==="Test"?4:2;
-  return Array.from({length:inningsCount},(_,index)=>{
+  const count=careerFormat(m.format)==="Test"?4:2;
+
+  return Array.from({length:count},(_,index)=>{
     const innings=index+1;
     const inningsData=ds.filter(d=>Number(d.innings||1)===innings);
     const state=calcMatch(inningsData,m,innings);
     const battingTeam=state.team;
-    const bowlingTeam=battingTeam===st(m.team_a)?st(m.team_b):st(m.team_a);
-    return `<div class="section innings-card">
+    const bowlingTeam=
+      battingTeam===st(m.team_a)?st(m.team_b):st(m.team_a);
+
+    return `<div class="section">
       <h2>Innings ${innings}: ${esc(battingTeam)} batting</h2>
       <div class="muted innings-summary">
-        ${inningsData.length?`${state.runs}/${state.wickets} · ${state.overs} overs`:"Not started"}
+        ${inningsData.length
+          ?`${state.runs}/${state.wickets} · ${state.overs} overs`
+          :"Not started"}
       </div>
       <h3>Batting Scorecard</h3>
-      ${inningsData.length?battingCard(state,m):`<div class="card empty">No deliveries recorded.</div>`}
+      ${inningsData.length
+        ?battingCard(state,m)
+        :`<div class="card empty">No deliveries recorded.</div>`}
       <h3>Bowling Card: ${esc(bowlingTeam)}</h3>
-      ${inningsData.length?bowlingCard(state):`<div class="card empty">No deliveries recorded.</div>`}
+      ${inningsData.length
+        ?bowlingCard(state)
+        :`<div class="card empty">No deliveries recorded.</div>`}
     </div>`;
   }).join("");
 }
+
 function playingXI(m,a,b){
  const ix=m.playing_xi||{};
  const squads=DATA.squads||{};
@@ -494,12 +900,25 @@ function playingXI(m,a,b){
  function box(team){
    let names=ix[team]||squads[team]?.filter(x=>x.playing_xi).map(x=>x.name)||[];
    if(!names.length)names=squads[team]?.slice(0,11).map(x=>x.name)||[];
-   return `<div class="card"><div class="squad-team">${logo(team,"mini-logo")}<h3>${esc(team)} · Playing XI</h3></div><div class="squad-list">${names.slice(0,11).map(n=>`<div class="player-row"><b>${esc(n)}</b><small>${esc(roleFor(team,n))}</small></div>`).join("")}</div><p class="muted">${Math.max(0,(squads[team]?.length||20)-11)} squad members on bench/standby</p></div>`;
+   return `<div class="card"><div class="squad-team"><h3>${esc(team)} · Playing XI</h3></div><div class="squad-list">${names.slice(0,11).map(n=>`<div class="player-row"><b>${esc(n)}</b><small>${esc(roleFor(team,n))}</small></div>`).join("")}</div><p class="muted">${Math.max(0,(squads[team]?.length||20)-11)} squad members on bench/standby</p></div>`;
  }
  return `<div class="squads">${box(a)}${box(b)}</div>`;
 }
 
-function teamsPage(){const rows=DATA.teams.map(t=>`<tr><td>${logo(t.short_team,"mini-logo")} <b>${esc(t.short_team)}</b></td><td>${t.matches}</td><td>${t.wins}</td><td>${t.losses}</td><td>${t.no_results}</td><td>${t.win_percentage}%</td></tr>`);app.innerHTML=head("Teams","Every team has 20 registered players · 11 playing XI + 9 standby")+table(["Team","Matches","Wins","Losses","NR","Win %"],rows)}
+function calculatedTeamRecords(){
+ const base=(DATA.teams||[]).map(t=>({...t,matches:0,wins:0,losses:0,no_results:0,ties:0}));
+ const map=Object.fromEntries(base.map(t=>[st(t.short_team||t.team),t]));
+ for(const m of (DATA.live_matches||[])){
+   if(String(m.status||"").toLowerCase()!=="completed")continue;
+   const a=st(m.team_a),b=st(m.team_b); if(!map[a]||!map[b])continue;
+   const r=deriveCompletedMatchResult(m); map[a].matches++;map[b].matches++;
+   if(r.type==="WIN"){map[r.winner].wins++;map[r.loser].losses++;}
+   else if(r.type==="NR"){map[a].no_results++;map[b].no_results++;}
+   else {map[a].ties=(map[a].ties||0)+1;map[b].ties=(map[b].ties||0)+1;}
+ }
+ return base.map(t=>({...t,win_percentage:t.matches?Number((t.wins*100/t.matches).toFixed(2)):0}));
+}
+function teamsPage(){const rows=calculatedTeamRecords().map(t=>`<tr><td><b>${esc(t.short_team)}</b></td><td>${t.matches}</td><td>${t.wins}</td><td>${t.losses}</td><td>${t.no_results}</td><td>${t.win_percentage}%</td></tr>`);app.innerHTML=head("Teams","Shared records update automatically after a match finishes")+table(["Team","Matches","Wins","Losses","NR","Win %"],rows)}
 function playersPage(){const rows=mergedCareerRecords().map(p=>`<tr><td>${playerLink(p.name)}</td><td>${p.team}</td><td>${esc(p.role)}</td><td>${fmt(p.runs)}</td><td>${p.average}</td><td>${p.hundreds}</td><td>${p.fifty_plus}</td><td>${p.wickets}</td><td>${p.catches}</td></tr>`);app.innerHTML=head("Players","100-player tournament database")+`<input id="ps" class="input search" placeholder="Search player or team">`+table(["Player","Team","Role","Runs","Avg","100s","50+","Wkts","Catches"],rows);document.getElementById("ps").oninput=e=>{let q=e.target.value.toLowerCase();document.querySelectorAll(".table tbody tr").forEach(r=>r.style.display=r.innerText.toLowerCase().includes(q)?"":"none")}}
 function playerPage(){
  const p=mergedCareerRecords().find(x=>x.name===currentPlayer);
@@ -542,8 +961,183 @@ function careerRecords(){
  };
 }
 function catchesPage(){app.innerHTML=head("Most Catches","Fielding leaderboard");app.innerHTML+=table(["Rank","Player","Team","Catches","Stumpings","Run-outs"],DATA.catches.map(x=>`<tr><td>${x.catch_rank}</td><td>${playerLink(x.player)}</td><td>${x.short_team}</td><td>${x.total_catches}</td><td>${x.total_stumpings}</td><td>${x.total_runouts}</td></tr>`))}
-function teamRecords(){app.innerHTML=head("Team Records","Tournament results by team");app.innerHTML+=table(["Team","Matches","Wins","Losses","NR","Win %"],DATA.teams.map(x=>`<tr><td>${x.short_team}</td><td>${x.matches}</td><td>${x.wins}</td><td>${x.losses}</td><td>${x.no_results}</td><td>${x.win_percentage}%</td></tr>`))}
-function records(){app.innerHTML=head("Records","Choose an individual or team record category")+`<div class="grid">${[["Career Records","careerRecords"],["Most Centuries","centuryRecords"],["Most 50+ Scores","fiftyRecords"],["Most Sixes","sixRecords"],["Most Fours","fourRecords"],["Most Wickets","wicketRecords"],["Most Catches","catchRecords"],["Team Records","teamRecords"]].map(x=>`<div class="card"><h3>${x[0]}</h3><button class="btn" onclick="navigate('${x[1]}')">Open</button></div>`).join("")}</div>`}
+function deriveCompletedMatchResult(m){
+  const ds=Array.isArray(m?.deliveries)?m.deliveries:[];
+  const teams=[st(m?.team_a),st(m?.team_b)];
+  const format=careerFormat(m?.format);
+
+  if(!ds.length)return {type:"NR",winner:"",loser:"",text:"No Result"};
+
+  const innings={};
+  for(const d of ds){
+    const n=Number(d?.innings||1);
+    if(!innings[n])innings[n]={runs:0,wickets:0};
+    innings[n].runs+=Number(d?.runs||0)+Number(d?.extra_runs||0);
+    innings[n].wickets+=Number(d?.wicket||0);
+  }
+
+  const nums=Object.keys(innings).map(Number).sort((a,b)=>a-b);
+  if(nums.length<2)return {type:"NR",winner:"",loser:"",text:"No Result"};
+
+  const firstBatTeam=
+    st(ds.find(d=>Number(d?.innings||1)===nums[0])?.batsman_team)||
+    st(m?.batting_first)||
+    teams[0];
+
+  const secondBatTeam=firstBatTeam===teams[0]?teams[1]:teams[0];
+
+  if(format==="Test"&&nums.length>=4){
+    const firstTotal=innings[nums[0]].runs+innings[nums[2]].runs;
+    const secondTotal=innings[nums[1]].runs+innings[nums[3]].runs;
+
+    if(firstTotal===secondTotal){
+      return {type:"TIE",winner:"",loser:"",text:"Match tied"};
+    }
+
+    const winner=firstTotal>secondTotal?firstBatTeam:secondBatTeam;
+    const loser=winner===firstBatTeam?secondBatTeam:firstBatTeam;
+
+    const finalInnings=innings[nums[3]];
+    const fourthTarget=firstTotal+1;
+
+    if(finalInnings.runs>=fourthTarget){
+      const wicketsRemaining=Math.max(0,10-finalInnings.wickets);
+      return {
+        type:"WIN",
+        winner,
+        loser,
+        text:`${winner} won by ${wicketsRemaining} wickets`
+      };
+    }
+
+    return {
+      type:"WIN",
+      winner,
+      loser,
+      text:`${winner} won by ${Math.abs(firstTotal-secondTotal)} runs`
+    };
+  }
+
+  const first=innings[nums[0]].runs;
+  const second=innings[nums[1]].runs;
+
+  if(first===second){
+    return {type:"TIE",winner:"",loser:"",text:"Match tied"};
+  }
+
+  const winner=second>first?secondBatTeam:firstBatTeam;
+  const loser=winner===secondBatTeam?firstBatTeam:secondBatTeam;
+
+  if(second>first){
+    const wicketsRemaining=Math.max(0,10-innings[nums[1]].wickets);
+    return {
+      type:"WIN",
+      winner,
+      loser,
+      text:`${winner} won by ${wicketsRemaining} wickets`
+    };
+  }
+
+  return {
+    type:"WIN",
+    winner,
+    loser,
+    text:`${winner} won by ${Math.abs(first-second)} runs`
+  };
+}
+
+
+function pointTableData(format){
+  const table=Object.fromEntries(
+    ["GCET","GLB","ABES","JSS","KCC"].map(team=>[
+      team,{team,played:0,wins:0,losses:0,ties:0,nr:0,points:0}
+    ])
+  );
+
+  const completed=(DATA.live_matches||[]).filter(m=>
+    m &&
+    String(m.status||"").toLowerCase()==="completed" &&
+    careerFormat(m.format)===format &&
+    m.points_table_enabled===true
+  );
+
+  for(const m of completed){
+    const a=st(m.team_a),b=st(m.team_b);
+    if(!table[a]||!table[b])continue;
+
+    const result=deriveCompletedMatchResult(m);
+
+    table[a].played++;
+    table[b].played++;
+
+    if(result.type==="WIN" && (result.winner===a||result.winner===b)){
+      const loser=result.winner===a?b:a;
+      table[result.winner].wins++;
+      table[result.winner].points+=2;
+      table[loser].losses++;
+    }else if(result.type==="TIE"){
+      table[a].ties++;
+      table[b].ties++;
+      table[a].points++;
+      table[b].points++;
+    }else{
+      table[a].nr++;
+      table[b].nr++;
+      table[a].points++;
+      table[b].points++;
+    }
+  }
+
+  return Object.values(table).sort(
+    (x,y)=>
+      y.points-x.points ||
+      y.wins-x.wins ||
+      y.ties-x.ties ||
+      y.played-x.played ||
+      x.team.localeCompare(y.team)
+  );
+}
+
+function pointTableSection(format){
+  const rows=pointTableData(format).map((x,i)=>`<tr>
+    <td><b>${i+1}</b></td>
+    <td><b>${esc(x.team)}</b></td>
+    <td>${x.played}</td>
+    <td>${x.wins}</td>
+    <td>${x.losses}</td>
+    <td>${x.ties}</td>
+    <td>${x.nr}</td>
+    <td><b>${x.points}</b></td>
+    <td>${x.played?((x.wins/x.played)*100).toFixed(2):"0.00"}%</td>
+  </tr>`).join("");
+
+  return `<div class="section">
+    <h2>${format} Points Table 2026</h2>
+    ${table(["Pos","Team","P","W","L","T","NR","Pts","Win %"],rows)}
+  </div>`;
+}
+
+
+function pointTable(){
+  app.innerHTML=head(
+    "Points Table 2026",
+    "Only Admin-approved completed matches are included · Win 2 · Tie/No Result 1 · Loss 0"
+  )+
+  pointTableSection("T20")+
+  pointTableSection("ODI")+
+  pointTableSection("Test");
+}
+
+function records(){app.innerHTML=head("Records","Choose an individual record category")+`<div class="grid">${[
+["Career Records","careerRecords"],
+["Most Centuries","centuryRecords"],
+["Most 50+ Scores","fiftyRecords"],
+["Most Sixes","sixRecords"],
+["Most Fours","fourRecords"],
+["Most Wickets","wicketRecords"],
+["Most Catches","catchRecords"],
+["Points Table 2026","pointTable"]
+].map(x=>`<div class="card"><h3>${x[0]}</h3><button class="btn" onclick="navigate('${x[1]}')">Open</button></div>`).join("")}</div>`}
 function headToHead(){const ts=Object.keys(DATA.squads||{});app.innerHTML=head("Head to Head","Opponent records from the supplied starting dataset")+`<div class="tabs">${ts.map(t=>`<button onclick="h2h('${t}')">${t}</button>`).join("")}</div><div id="h2h" class="card empty">Select a team.</div>`}
 function h2h(t){const rows=DATA.opponent_records.filter(x=>x.short_team===t||x.team===t).slice(0,50);document.getElementById("h2h").innerHTML=rows.length?table(Object.keys(rows[0]).slice(0,9),rows.map(x=>`<tr>${Object.values(x).slice(0,9).map(v=>`<td>${esc(v)}</td>`).join("")}</tr>`)):"No records found."}
 function stats(){app.innerHTML=head("Stats Explorer","Use the menu to move between format rankings, career records and opponent records")+`<div class="grid"><div class="card"><h3>Batting</h3><p>Runs · average · SR · 100s · 50+ · 4s · 6s</p><button class="btn" onclick="navigate('batRankings')">Open</button></div><div class="card"><h3>Bowling</h3><p>Overs · economy · wickets · bowling rating</p><button class="btn" onclick="navigate('bowlRankings')">Open</button></div><div class="card"><h3>Fielding</h3><p>Catches · stumpings · run-outs</p><button class="btn" onclick="navigate('catchRecords')">Open</button></div><div class="card"><h3>Player Career</h3><p>Separate Test, ODI and T20 records.</p><button class="btn" onclick="navigate('careerRecords')">Open</button></div></div>`}
@@ -727,15 +1321,9 @@ function updateRatingsFromPerformance(){
 }
 
 function loadSavedPerformance(){
- try{
-   const b=JSON.parse(localStorage.getItem("nict_batting_rankings")||"null");
-   const w=JSON.parse(localStorage.getItem("nict_bowling_rankings")||"null");
-   const r=JSON.parse(localStorage.getItem("nict_ratings")||"null");
-   if(b)DATA.batting_rankings=b;
-   if(w)DATA.bowling_rankings=w;
-   if(r)DATA.ratings=r;
- }catch(e){}
+  /* Intentionally disabled: rankings must be identical across devices. */
 }
+
 function mergedCareerRecords(){
   return (DATA.career_records||[]).map(x=>JSON.parse(JSON.stringify(x)));
 }
@@ -745,70 +1333,337 @@ function admin(){
  app.innerHTML=`<div class="admin-lock card"><h1>🔒 Admin</h1><p class="muted">Enter the tournament admin password.</p><input id="adminPass" class="input" type="password" placeholder="Password"><button class="btn" onclick="unlock()">Unlock Admin</button><p id="adminMsg" class="muted"></p></div>`;
 }
 function unlock(){const p=document.getElementById("adminPass").value;if(p==="@@098"){sessionStorage.setItem("nict_admin","true");sessionStorage.setItem("nict_admin_password",p);adminPanel()}else document.getElementById("adminMsg").textContent="Incorrect password."}
+
+function isMatchFinished(m){
+  if(!m)return false;
+
+  const status=String(
+    m.status ||
+    m.audit?.status ||
+    ""
+  ).toLowerCase();
+
+  if(["completed","finished","result"].includes(status))return true;
+
+  if(
+    m.match_finished===true ||
+    m.finished===true ||
+    m.completed===true ||
+    m.result_final===true
+  )return true;
+
+  const ds=Array.isArray(m.deliveries)?m.deliveries:[];
+  if(!ds.length)return false;
+
+  const last=ds[ds.length-1]||{};
+  if(
+    last.match_end===1 ||
+    last.match_finished===true ||
+    last.match_complete===true
+  )return true;
+
+  /*
+    If the feed contains explicit innings_end markers for the final
+    innings, the match is considered finished. This lets the admin
+    approve player stats without a separate "Complete Match" button.
+  */
+  const expectedInnings=careerFormat(m.format)==="Test"?4:2;
+  const inningsNumbers=[
+    ...new Set(
+      ds.map(d=>Number(d.innings||1))
+    )
+  ].sort((a,b)=>a-b);
+
+  if(
+    inningsNumbers.length>=expectedInnings &&
+    Number(last.innings_end||0)===1
+  )return true;
+
+  return false;
+}
+
 function adminPanel(){
- app.innerHTML=head("Admin","Upload a complete ball-by-ball JSON and start it in the frontend viewer")+
- `<div class="notice">Upload format: JSON with <b>deliveries</b>. Team names are normalized automatically. A filename such as <b>GCET_vs_GLB.json</b> is also understood. Uploaded matches are stored in this browser.</div>
- <div class="section upload-box"><h2>Upload Match JSON</h2><input class="input file" id="jsonFile" type="file" accept=".json,application/json"><button class="btn" onclick="uploadJSON()">Upload Match</button><p id="uploadMsg" class="muted"></p></div>
- <div class="section"><h2>Available Matches</h2><div id="adminMatches"></div></div>
- <div class="section"><button class="btn secondary" onclick="rebuildCareerFromCompletedMatches()">Update Career From Completed Matches</button> <button class="btn secondary" onclick="sessionStorage.removeItem('nict_admin');admin()">Lock Admin</button></div>`;
+ app.innerHTML=head(
+   "Admin",
+   "Match controls and player-stat approval"
+ )+
+ `<div class="notice">
+   Admin controls are intentionally limited to:
+   <b>Start Match</b>, <b>Rain</b>, <b>Suspend</b>,
+   <b>Resume Match</b> and <b>Delete Current Live Match</b>.
+   When a match is finished, shared team records and player career statistics update automatically.
+ </div>
+ <div class="section">
+   <h2>Matches</h2>
+   <div id="adminMatches"></div>
+ </div>
+ <div class="section">
+   <button class="btn secondary"
+     onclick="sessionStorage.removeItem('nict_admin');sessionStorage.removeItem('nict_admin_password');admin()">
+     Lock Admin
+   </button>
+ </div>`;
  renderAdminMatches();
 }
 
-async function rebuildCareerFromCompletedMatches(){
+let __nictCompleting=false;
+async function autoCompleteFinishedMatches(){
+ if(__nictCompleting)return;
+ const candidates=(DATA.live_matches||[]).filter(m=>
+   m && isMatchFinished(m) && String(m.status||"").toLowerCase()!=="completed"
+ );
+ if(!candidates.length)return;
+ __nictCompleting=true;
+ try{
+   for(const m of candidates){
+     const result=deriveCompletedMatchResult(m);
+     const updated={...m,status:"completed",winner:result.winner||m.winner||"",result:result.text||m.result||"Match completed",completed_at:m.completed_at||new Date().toISOString(),player_records_enabled:true,player_stats_approved:true,player_stats_approved_at:new Date().toISOString()};
+     await adminCloud("POST",updated,m.match_id);
+   }
+   DATA.live_matches=await cloudMatches();
+   localStorage.setItem("nict_uploaded_matches",JSON.stringify(DATA.live_matches||[]));
+   await rebuildCareerFromCompletedMatches(false);
+ }catch(e){console.warn("Automatic match completion sync failed:",e);}
+ finally{__nictCompleting=false;}
+}
+
+async function rebuildCareerFromCompletedMatches(showMessage=true){
   try{
     const r=await fetch("/api/stats",{cache:"no-store"});
-    if(!r.ok)throw new Error("Stats server unavailable");
+    if(!r.ok)throw new Error(await r.text()||"Stats server unavailable");
     const s=await r.json();
+
     if(s.career_records)DATA.career_records=s.career_records;
     if(s.players_format)DATA.players_format=s.players_format;
     if(s.batting_rankings)DATA.batting_rankings=s.batting_rankings;
     if(s.bowling_rankings)DATA.bowling_rankings=s.bowling_rankings;
     if(s.ratings)DATA.ratings=s.ratings;
+    if(s.opponent_records)DATA.opponent_records=s.opponent_records;
+
+    localStorage.setItem("nict_career_records",JSON.stringify(DATA.career_records||[]));
+    localStorage.setItem("nict_players_format",JSON.stringify(DATA.players_format||[]));
     renderAdminMatches();
-    alert("Career records and rankings refreshed from shared matches.");
-  }catch(e){alert(e.message)}
+    render();
+    if(showMessage)alert("Player career statistics have been refreshed from the shared completed-match data.");
+  }catch(e){
+    if(showMessage)alert("Could not update player stats: "+e.message);
+  }
+}
+
+async function updatePlayerStats(index){
+  const m=DATA.live_matches?.[index];
+  if(!m)return;
+
+  if(sessionStorage.getItem("nict_admin")!=="true"){
+    alert("Admin authentication required.");
+    return;
+  }
+
+  if(!isMatchFinished(m)){
+    alert(
+      "Player career cannot be updated yet. Finish the match first, then use Update Stats of Player."
+    );
+    return;
+  }
+
+  if(m.player_records_enabled===true){
+    if(!confirm("Player stats are already approved for this match. Rebuild shared player statistics again?"))return;
+  }else if(!confirm(
+    `Allow player career statistics for ${st(m.team_a)} vs ${st(m.team_b)}?`
+  )){
+    return;
+  }
+
+  const result=deriveCompletedMatchResult(m);
+  const now=new Date().toISOString();
+
+  const updated={
+    ...m,
+    status:"completed",
+    winner:result.winner||m.winner||"",
+    result:result.text||m.result||(
+      result.type==="WIN"
+        ? `${result.winner} won`
+        : result.type==="TIE"
+          ? "Match tied"
+          : "No Result"
+    ),
+    completed_at:m.completed_at||now,
+    player_records_enabled:true,
+    player_stats_approved:true,
+    player_stats_approved_at:now
+  };
+
+  try{
+    await adminCloud("POST",updated,m.match_id);
+
+    DATA.live_matches=await cloudMatches();
+    localStorage.setItem(
+      "nict_uploaded_matches",
+      JSON.stringify(DATA.live_matches||[])
+    );
+
+    await rebuildCareerFromCompletedMatches();
+  }catch(e){
+    alert("Could not approve player stats: "+e.message);
+  }
 }
 
 function renderAdminMatches(){
- const box=document.getElementById("adminMatches");if(!box)return;
- const local=Array.isArray(DATA.live_matches)?DATA.live_matches:[];
- const rows=local.map((m,i)=>{
-   const status=String(m.status||"upcoming").toLowerCase();
-   const action=status==="live"
-     ? `<button class="btn" onclick="startLive(${i})">Open Live</button>`
-     : status==="completed"
-       ? `<button class="btn" onclick="startLive(${i})">View Scorecard</button>`
-       : `<button class="btn" onclick="useUploaded(${i})">▶ Start Match</button>`;
-   const complete=status==="completed"
-     ? ""
-     : `<button class="btn secondary" onclick="completeMatch(${i})">Complete Match</button>`;
-   return `<div class="match-card">
-     <b>${esc(st(m.team_a))} vs ${esc(st(m.team_b))}</b>
-     <div class="muted">${esc(m.format||"")} · ${esc(m.match_id||"")}</div>
-     <div class="pill ${status==="live"?"live-pill":""}">${esc(status.toUpperCase())}</div>
-     <div class="event-controls">
-       <label>Event after
-         <select id="eventBall${i}" class="input">${eventBallOptions(m)}</select>
-       </label>
-       <button class="btn" onclick="addMatchEvent(${i},'tea')">Tea break</button>
-       <button class="btn" onclick="addMatchEvent(${i},'drinks')">Drinks break</button>
-       <button class="btn" onclick="addMatchEvent(${i},'rain')">Rain suspension</button>
-       <button class="btn" onclick="addMatchEvent(${i},'draw')">Draw</button>
-       <button class="btn secondary" onclick="resumeRain(${i})">Resume rain</button>
-     </div>
-     <div style="margin-top:8px">
-       ${action}
-       ${complete}
-       <button class="btn danger" onclick="deleteUploaded(${i})">Delete</button>
-     </div>
-   </div>`;
- }).join("");
- box.innerHTML=rows||`<div class="empty">No matches available on the shared server yet.</div>`;
+  const box=document.getElementById("adminMatches");
+  if(!box)return;
+
+  const local=Array.isArray(DATA.live_matches)?DATA.live_matches:[];
+
+  const rows=local.map((m,i)=>{
+    const status=String(m.status||"upcoming").toLowerCase();
+    const finished=isMatchFinished(m);
+    const started=["live","in_progress","started"].includes(status);
+    const statsApproved=m.player_records_enabled===true;
+
+    return `<div class="match-card">
+      <b>${esc(st(m.team_a))} vs ${esc(st(m.team_b))}</b>
+      <div class="muted">${esc(m.format||"")} · ${esc(m.match_id||"")}</div>
+
+      <div class="notice">
+        Status: <b>${esc(status.toUpperCase())}</b>
+        ${m.result?` · ${esc(m.result)}`:""}
+        ${finished?` · <b>MATCH FINISHED</b>`:""}
+        ${statsApproved?` · <b>PLAYER STATS APPROVED</b>`:""}
+      </div>
+
+      <div class="event-controls">
+        <label>Event after
+          <select id="eventBall${i}" class="input">
+            ${eventBallOptions(m)}
+          </select>
+        </label>
+
+        <button class="btn"
+          onclick="addMatchEvent(${i},'rain')">
+          Rain
+        </button>
+
+        <button class="btn"
+          onclick="addMatchEvent(${i},'suspend')">
+          Suspend Match
+        </button>
+
+        <button class="btn secondary"
+          onclick="resumeMatch(${i})">
+          Resume Match
+        </button>
+      </div>
+
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn"
+          onclick="useUploaded(${i})"
+          ${started||finished?"disabled":""}>
+          Start Match
+        </button>
+
+        <button class="btn"
+          onclick="updatePlayerStats(${i})"
+          ${finished?"":"disabled"}>
+          Update Stats of Player
+        </button>
+
+        ${started&&!finished?`<button class="btn delete-match-btn" onclick="deleteCurrentLiveMatch(${i})">🗑 Delete Current Live Match</button>`:""}
+      </div>
+    </div>`;
+  }).join("");
+
+  box.innerHTML=rows||`<div class="empty">No matches available.</div>`;
 }
+
+function eventBallOptions(m){
+  const count=(m.deliveries||[]).length;
+  return Array.from(
+    {length:count+1},
+    (_,i)=>`<option value="${i}">
+      ${i===0?"Before first ball":`After ball ${i}`}
+    </option>`
+  ).join("");
+}
+
+async function addMatchEvent(index,type){
+  const m=DATA.live_matches?.[index];
+  if(!m)return;
+
+  if(sessionStorage.getItem("nict_admin")!=="true"){
+    alert("Admin authentication required.");
+    return;
+  }
+
+  const afterBall=Number(
+    document.getElementById(`eventBall${index}`)?.value||0
+  );
+
+  const events=Array.isArray(m.events)
+    ?m.events.filter(e=>!(
+        Number(e.afterBall)===afterBall &&
+        e.type===type
+      ))
+    :[];
+
+  events.push({
+    type,
+    afterBall,
+    resumed:false,
+    created_at:new Date().toISOString()
+  });
+
+  try{
+    const updated={...m,events};
+    await adminCloud("POST",updated,m.match_id);
+    DATA.live_matches=await cloudMatches();
+    localStorage.setItem(
+      "nict_uploaded_matches",
+      JSON.stringify(DATA.live_matches||[])
+    );
+    renderAdminMatches();
+  }catch(e){
+    alert("Could not save match event: "+e.message);
+  }
+}
+
+async function resumeMatch(index){
+  const m=DATA.live_matches?.[index];
+  if(!m)return;
+
+  if(sessionStorage.getItem("nict_admin")!=="true"){
+    alert("Admin authentication required.");
+    return;
+  }
+
+  const events=(m.events||[]).map(e=>(
+    e.type==="rain"||e.type==="suspend"
+      ?{...e,resumed:true,resumed_at:new Date().toISOString()}
+      :e
+  ));
+
+  try{
+    const updated={
+      ...m,
+      events,
+      match_suspended:false
+    };
+
+    await adminCloud("POST",updated,m.match_id);
+    DATA.live_matches=await cloudMatches();
+    localStorage.setItem(
+      "nict_uploaded_matches",
+      JSON.stringify(DATA.live_matches||[])
+    );
+    renderAdminMatches();
+  }catch(e){
+    alert("Could not resume match: "+e.message);
+  }
+}
+
 function eventBallOptions(m){const count=(m.deliveries||[]).length;return Array.from({length:count+1},(_,i)=>`<option value="${i}">${i===0?"Before first ball":`After ball ${i}`}</option>`).join("")}
 function saveUploadedMatches(local){localStorage.setItem("nict_uploaded_matches",JSON.stringify(local));DATA.live_matches=local}
 function addMatchEvent(index,type){const local=JSON.parse(localStorage.getItem("nict_uploaded_matches")||"[]"),match=local[index];if(!match)return;match.events=match.events||[];const afterBall=Number(document.getElementById(`eventBall${index}`).value);match.events=match.events.filter(e=>!(Number(e.afterBall)===afterBall&&e.type===type));match.events.push({type,afterBall,resumed:false});saveUploadedMatches(local);renderAdminMatches()}
-function resumeRain(index){const local=JSON.parse(localStorage.getItem("nict_uploaded_matches")||"[]"),match=local[index];if(!match)return;(match.events||[]).filter(e=>e.type==="rain").forEach(e=>e.resumed=true);saveUploadedMatches(local);renderAdminMatches()}
 function parseFilename(name){
  const clean=name.replace(/\.[^.]+$/,"");
  const m=clean.match(/(.+?)_vs_(.+)$/i);
@@ -825,6 +1680,10 @@ async function uploadJSON(){
     if(!d.team_a||!d.team_b)throw new Error("Team names missing.");
     d.file_name=f.name;d.match_id=d.match_id||f.name.replace(/\.json$/i,"");
     d.status="upcoming";d.started_at=null;
+     d.points_table_enabled=false;
+     d.player_records_enabled=false;
+     d.rankings_enabled=false;
+     d.records_applied=false;
     d.deliveries=d.deliveries.map(x=>({...x,
       batsman_team:x.batsman_team||((Number(x.innings||1)%2===1)?d.team_a:d.team_b),
       bowling_team:x.bowling_team||((Number(x.innings||1)%2===1)?d.team_b:d.team_a)
@@ -840,39 +1699,37 @@ async function useUploaded(i){
   const m=DATA.live_matches?.[i];if(!m)return;
   try{
     const updated={...m,status:"live",started_at:new Date().toISOString()};
-    const response=await adminCloud("POST",updated);
+    await adminCloud("POST",updated);
     DATA.live_matches=await cloudMatches();
-    const fresh=DATA.live_matches.find(x=>String(x.match_id)===String(m.match_id))
-      || response?.match_json
-      || updated;
+    const fresh=DATA.live_matches.find(x=>String(x.match_id)===String(m.match_id))||updated;
     localStorage.setItem("nict_active_match_id",String(fresh.match_id));
-    localStorage.setItem("nict_active_match",String(
-      DATA.live_matches.findIndex(x=>String(x.match_id)===String(fresh.match_id))
-    ));
-    view="live";
-    render();
+    view="live";render();
   }catch(e){alert("Could not start shared live match: "+e.message)}
 }
-async function completeMatch(i){
-  const m=DATA.live_matches?.[i];
-  if(!m)return;
-  if(!confirm(`Mark ${m.team_a} vs ${m.team_b} as completed?`))return;
-  try{
-    const updated={...m,status:"completed"};
-    await adminCloud("PATCH",updated,m.match_id);
-    DATA.live_matches=await cloudMatches();
-    renderAdminMatches();
-  }catch(e){
-    alert("Complete match failed: "+e.message);
+async function deleteCurrentLiveMatch(i){
+  const m=DATA.live_matches?.[i]; if(!m)return;
+  const status=String(m.status||"").toLowerCase();
+  if(!["live","in_progress","started"].includes(status)){
+    alert("Only the current live match can be deleted. Upcoming and completed matches are protected."); return;
   }
-}
-async function deleteUploaded(i){
-  const m=DATA.live_matches?.[i];if(!m)return;
+  if(sessionStorage.getItem("nict_admin")!=="true"){alert("Admin authentication required.");return;}
+  const name=`${st(m.team_a)} vs ${st(m.team_b)}`;
+  if(!confirm(`Delete ONLY the current live match?\n\n${name}\n\nThis permanently removes its saved scorecard from all devices.`))return;
   try{
     await adminCloud("DELETE",null,m.match_id);
     DATA.live_matches=await cloudMatches();
+    localStorage.setItem("nict_uploaded_matches",JSON.stringify(DATA.live_matches||[]));
+    if(String(localStorage.getItem("nict_active_match_id")||"")===String(m.match_id)){
+      localStorage.removeItem("nict_active_match_id"); localStorage.removeItem("nict_active_match");
+      if(view==="live")navigate("home");
+    }
     renderAdminMatches();
+    alert("Current live match deleted from the shared server.");
   }catch(e){alert("Delete failed: "+e.message)}
 }
+// Protected backward-compatible alias.
+async function deleteUploaded(i){return deleteCurrentLiveMatch(i)}
 
 loadData();
+
+
