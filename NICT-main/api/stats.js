@@ -12,6 +12,9 @@
 
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const SB_URL =
   process.env.SUPABASE_URL;
@@ -23,51 +26,58 @@ function readJSON(
   name,
   fallback = []
 ) {
-  try {
-    const file =
-      path.join(
-        process.cwd(),
-        "data",
-        `${name}.json`
-      );
+  const candidates = [
+    path.join(process.cwd(), "data", `${name}.json`),
+    path.join(__dirname, "..", "data", `${name}.json`),
+    path.join(process.cwd(), "NICT-main", "data", `${name}.json`)
+  ];
 
-    return JSON.parse(
-      fs.readFileSync(
-        file,
-        "utf8"
-      )
-    );
-  } catch {
-    return fallback;
+  for (const file of candidates) {
+    try {
+      if (fs.existsSync(file)) {
+        return JSON.parse(
+          fs.readFileSync(file, "utf8")
+        );
+      }
+    } catch (error) {
+      console.warn(`stats: failed reading ${file}`, error);
+    }
   }
+
+  console.warn(`stats: ${name}.json not found in`, candidates);
+  return fallback;
 }
 
 async function getMatches() {
   if (!SB_URL || !SB_KEY) {
-    throw new Error(
-      "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required."
-    );
+    console.warn("stats: Supabase not configured, using baseline JSON only");
+    return [];
   }
 
-  const response =
-    await fetch(
-      `${SB_URL}/rest/v1/matches?select=id,match_json,status,started_at,created_at&order=created_at.asc`,
-      {
-        headers: {
-          apikey: SB_KEY,
-          Authorization:
-            `Bearer ${SB_KEY}`
+  try {
+    const response =
+      await fetch(
+        `${SB_URL}/rest/v1/matches?select=id,match_json,status,started_at,created_at&order=created_at.asc`,
+        {
+          headers: {
+            apikey: SB_KEY,
+            Authorization:
+              `Bearer ${SB_KEY}`
+          }
         }
-      }
-    );
+      );
 
-  if (!response.ok) {
-    throw new Error(
-      await response.text()
-    );
+    if (!response.ok) {
+      throw new Error(
+        await response.text()
+      );
+    }
+
+    return response.json();
+  } catch (error) {
+    console.warn("stats: could not load matches, using baseline JSON only", error);
+    return [];
   }
-
-  return response.json();
 }
 
 function st(v) {
