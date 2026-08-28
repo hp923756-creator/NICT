@@ -573,6 +573,16 @@ function calculateMatchStats(
     }
   }
 
+  for (
+    const [name, p] of
+    Object.entries(perPlayer)
+  ) {
+    p.fours =
+      num(players[name]?.fours);
+    p.sixes =
+      num(players[name]?.sixes);
+  }
+
   return {
     players,
     bowlers,
@@ -675,11 +685,6 @@ export default async function handler(
         "bowling_rankings"
       );
 
-    const ratingsBase =
-      readJSON(
-        "ratings"
-      );
-
     const career =
       Array.isArray(
         careerBase
@@ -720,17 +725,6 @@ export default async function handler(
         ? JSON.parse(
             JSON.stringify(
               bowlingBase
-            )
-          )
-        : [];
-
-    const ratings =
-      Array.isArray(
-        ratingsBase
-      )
-        ? JSON.parse(
-            JSON.stringify(
-              ratingsBase
             )
           )
         : [];
@@ -1240,8 +1234,22 @@ export default async function handler(
           })
         );
 
+    const ratings =
+      formats.map(p => ({
+        player: p.name,
+        short_team: p.short_team,
+        format: p.format,
+        batting_rating: p.batting_rating,
+        bowling_rating: p.bowling_rating,
+        rating: p.rating
+      }));
+
     return res
       .status(200)
+      .setHeader(
+        "Cache-Control",
+        "no-store, no-cache, must-revalidate"
+      )
       .json({
         career_records:
           career,
