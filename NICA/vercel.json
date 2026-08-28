@@ -1,5 +1,13 @@
 {
   "version": 2,
   "cleanUrls": true,
-  "trailingSlash": false
+  "trailingSlash": false,
+  "functions": {
+    "api/stats.js": {
+      "includeFiles": "data/**"
+    },
+    "api/matches.js": {
+      "includeFiles": "data/**"
+    }
+  }
 }
