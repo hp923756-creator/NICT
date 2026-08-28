@@ -32,24 +32,39 @@
 
 const DATA={}; let view="home", currentPlayer="", liveTimer=null, rankingFormat="T20", recordFormat="T20";
 const BALL_DELAY_SECONDS=20, OVER_BREAK_SECONDS=60, INNINGS_BREAK_SECONDS=900, TOSS_BREAK_SECONDS=900;
-const app=document.getElementById("app");
+let app=null;
 const CLOUD_API="/api/matches";
 let CLOUD_MATCHES=[];
 async function cloudMatches(){
   try{
     const r=await fetch(CLOUD_API,{cache:"no-store"});
-    if(!r.ok)throw new Error(await r.text());
+    if(!r.ok)throw new Error(await r.text()||`HTTP ${r.status}`);
     const rows=await r.json();
-    CLOUD_MATCHES=(Array.isArray(rows)?rows:[]).map(x=>x.match_json||x);
+    CLOUD_MATCHES=(Array.isArray(rows)?rows:[]).map(x=>x?.match_json||x).filter(Boolean);
     return CLOUD_MATCHES;
-  }catch(e){console.warn("Shared match server unavailable:",e);return []}
+  }catch(e){
+    console.warn("Shared match server unavailable:",e);
+    return null;
+  }
+}
+function applyCloudMatches(cloud){
+  if(!Array.isArray(cloud))return false;
+  DATA.live_matches=cloud;
+  localStorage.setItem("nict_uploaded_matches",JSON.stringify(cloud));
+  return true;
 }
 async function adminCloud(method,body,id=""){
   const password=sessionStorage.getItem("nict_admin_password")||"";
   const url=id?`${CLOUD_API}?id=${encodeURIComponent(id)}`:CLOUD_API;
   const r=await fetch(url,{method,headers:{"Content-Type":"application/json","x-admin-password":password},body:body?JSON.stringify(body):undefined});
   const data=await r.json().catch(()=>({}));
-  if(!r.ok)throw new Error(data.error||"Cloud request failed");
+  if(!r.ok){
+    const msg=data.error||"Cloud request failed";
+    if(r.status===401){
+      throw new Error(msg+" Check that Vercel ADMIN_PASSWORD matches the admin panel password (@@098).");
+    }
+    throw new Error(msg);
+  }
   return data;
 }
 
@@ -63,23 +78,30 @@ const TEAM_MAP={
 const LOGOS={GCET:"assets/logos/GCET.png",GLB:"assets/logos/GLB.png",ABES:"assets/logos/ABES.png",JSS:"assets/logos/JSS.png",KCC:"assets/logos/KCC.png"};
 
 function esc(x){return String(x??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function jsArg(v){return JSON.stringify(String(v??""))}
 function st(x){return TEAM_MAP[String(x||"").trim()]||String(x||"").trim()}
 function fmt(x){return Number(x||0).toLocaleString("en-IN")}
 function logo(t,cls="team-logo"){return `<img class="${cls}" src="${LOGOS[st(t)]||""}" alt="${esc(st(t))}">`}
 function navigate(v){view=v;closeMenu();render();scrollTo(0,0)}
-function closeMenu(){document.getElementById("drawer").classList.remove("open");document.getElementById("overlay").classList.remove("show")}
-document.querySelectorAll("[data-view]").forEach(b=>b.addEventListener("click",()=>navigate(b.dataset.view)));
-document.getElementById("menuBtn").onclick=()=>{document.getElementById("drawer").classList.add("open");document.getElementById("overlay").classList.add("show")};
-document.getElementById("closeMenu").onclick=closeMenu;document.getElementById("overlay").onclick=closeMenu;
-
+function closeMenu(){document.getElementById("drawer")?.classList.remove("open");document.getElementById("overlay")?.classList.remove("show")}
 function head(title,sub=""){return `<div class="page-head"><div><h1>${esc(title)}</h1>${sub?`<div class="muted">${esc(sub)}</div>`:""}</div></div>`}
 function table(h,rows){return `<div class="table-wrap"><table class="table"><thead><tr>${h.map(x=>`<th>${x}</th>`).join("")}</tr></thead><tbody>${rows.join("")}</tbody></table></div>`}
 function player(name){currentPlayer=name;view="player";render()}
-function playerLink(name){return `<a href="#" onclick="player('${esc(name)}');return false">${esc(name)}</a>`}
+function playerLink(name){return `<a href="#" onclick="player(${jsArg(name)});return false">${esc(name)}</a>`}
 
 async function loadData(){
+ if(!app)return;
  const names=["players_format","career_records","ratings","batting_rankings","bowling_rankings","catches","teams","squads","opponent_records","live_matches"];
- for(const n of names){try{DATA[n]=await fetch(`data/${n}.json`,{cache:"no-store"}).then(r=>r.json())}catch(e){DATA[n]=[]}}
+ for(const n of names){
+   try{
+     const r=await fetch(`data/${n}.json`,{cache:"no-store"});
+     if(!r.ok)throw new Error(`HTTP ${r.status}`);
+     DATA[n]=await r.json();
+   }catch(e){
+     console.warn(`Could not load data/${n}.json`,e);
+     DATA[n]=Array.isArray(DATA[n])?DATA[n]:[];
+   }
+ }
  const local=JSON.parse(localStorage.getItem("nict_uploaded_matches")||"[]");
  DATA.live_matches=local;
  const savedCareer=JSON.parse(localStorage.getItem("nict_career_records")||"null");
@@ -91,10 +113,7 @@ async function loadData(){
  loadSavedPerformance();
  try{
    const cloud=await cloudMatches();
-   if(Array.isArray(cloud)){
-     DATA.live_matches=cloud;
-     localStorage.setItem("nict_uploaded_matches",JSON.stringify(cloud));
-   }
+   if(cloud!==null)applyCloudMatches(cloud);
  }catch(e){console.warn("Cloud initial load failed",e)}
  selectSharedMatchFromURL();
  startCloudPolling();
@@ -117,10 +136,9 @@ function startCloudPolling(){
  window.__nictCloudPoll=setInterval(async()=>{
    try{
      const cloud=await cloudMatches();
-     if(Array.isArray(cloud)){
+     if(cloud!==null){
        const prev=JSON.stringify(DATA.live_matches||[]);
-       DATA.live_matches=cloud;
-       localStorage.setItem("nict_uploaded_matches",JSON.stringify(cloud));
+       applyCloudMatches(cloud);
 
        const newlyCompleted=cloud.filter(m=>{
          const id=String(m.match_id||"");
@@ -162,6 +180,7 @@ function selectSharedMatchFromURL(){
   }
 }
 function render(){
+  if(!app)return;
   selectSharedMatchFromURL();
  if(view==="home")return home(); if(view==="live")return live(); if(view==="matches")return matches();
  if(view==="teams")return teamsPage(); if(view==="players")return playersPage(); if(view==="player")return playerPage();
@@ -227,31 +246,6 @@ function normalizedMatch(m){
 }
 function tossSummary(m){if(!m.toss_winner)return "Toss result not available";const decision=String(m.toss_decision||"").toLowerCase();return `${st(m.toss_winner)} won the toss and chose to ${decision.includes("bowl")||decision.includes("field")?"bowl":"bat"}`}
 function careerFormat(format){return /t20/i.test(String(format||""))?"T20":/odi/i.test(String(format||""))?"ODI":"Test"}
-function matchCareerStats(m){
- const bat={}, bowl={}, field={};
- for(const d of m.deliveries||[]){
-   const runs=Number(d.runs||0), legal=legalBall(d), innings=Number(d.innings||1), batsman=d.batsman;
-   if(batsman){if(!bat[batsman])bat[batsman]={innings:new Set(),runs:0,balls:0,fours:0,sixes:0,dismissals:0};bat[batsman].innings.add(innings);bat[batsman].runs+=runs;if(legal)bat[batsman].balls++;if(runs===4)bat[batsman].fours++;if(runs===6)bat[batsman].sixes++}
-   if(d.dismissed_player&&bat[d.dismissed_player])bat[d.dismissed_player].dismissals++;
-   if(d.bowler){if(!bowl[d.bowler])bowl[d.bowler]={wickets:0,runs:0,balls:0};bowl[d.bowler].runs+=runs+Number(d.extra_runs||0);if(legal)bowl[d.bowler].balls++;if(d.wicket)bowl[d.bowler].wickets+=Number(d.wicket||0)}
-   if(d.fielder&&/catch/i.test(String(d.wicket_type||d.wicket||"")))field[d.fielder]=(field[d.fielder]||0)+1;
- }
- return {bat,bowl,field}
-}
-function updateCareerFromMatch(m){
- const key=`${m.file_name}:${m.match_id||""}`, done=JSON.parse(localStorage.getItem("nict_completed_matches")||"[]");
- if(done.includes(key))return;
- const format=careerFormat(m.format), stats=matchCareerStats(m), records=DATA.career_records||[], formats=DATA.players_format||[];
- Object.entries(stats.bat).forEach(([name,s])=>{
-   const record=records.find(x=>x.name===name), formatRecord=formats.find(x=>x.name===name&&careerFormat(x.format)===format);if(!record||!formatRecord)return;
-   const innings=s.innings.size, dismissals=s.dismissals, oldBalls=Number(formatRecord.strike_rate)?Number(formatRecord.runs)/(Number(formatRecord.strike_rate)/100):0;
-   record.matches++;record.innings+=innings;record.not_outs+=Math.max(0,innings-dismissals);record.runs+=s.runs;record.career_runs+=s.runs;record[`${format.toLowerCase()}_runs`]=(Number(record[`${format.toLowerCase()}_runs`])||0)+s.runs;record.fours+=s.fours;record.sixes+=s.sixes;record.hundreds+=s.runs>=100?1:0;record.fifties+=s.runs>=50&&s.runs<100?1:0;record.fifty_plus+=s.runs>=50?1:0;record.highest=Math.max(Number(record.highest)||0,s.runs);record.average=Number((record.runs/Math.max(1,record.innings-record.not_outs)).toFixed(2));
-   formatRecord.matches++;formatRecord.innings+=innings;formatRecord.not_outs+=Math.max(0,innings-dismissals);formatRecord.runs+=s.runs;formatRecord.fours+=s.fours;formatRecord.sixes+=s.sixes;formatRecord.hundreds+=s.runs>=100?1:0;formatRecord.fifties+=s.runs>=50&&s.runs<100?1:0;formatRecord.fifty_plus+=s.runs>=50?1:0;formatRecord.high_score=s.runs>(parseInt(formatRecord.high_score)||0)?`${s.runs}${dismissals?"":"*"}`:formatRecord.high_score;formatRecord.strike_rate=Number(((formatRecord.runs/(oldBalls+s.balls))*100).toFixed(2));
- });
- Object.entries(stats.bowl).forEach(([name,s])=>{const record=records.find(x=>x.name===name),formatRecord=formats.find(x=>x.name===name&&careerFormat(x.format)===format);if(record)record.wickets+=s.wickets;if(formatRecord)formatRecord.wickets+=s.wickets});
- Object.entries(stats.field).forEach(([name,catches])=>{const record=records.find(x=>x.name===name),formatRecord=formats.find(x=>x.name===name&&careerFormat(x.format)===format);if(record)record.catches+=catches;if(formatRecord)formatRecord.catches+=catches});
- localStorage.setItem("nict_career_records",JSON.stringify(records));localStorage.setItem("nict_players_format",JSON.stringify(formats));done.push(key);localStorage.setItem("nict_completed_matches",JSON.stringify(done));
-}
 function matchResultText(m,shown){
   if(!shown.length||shown.length<(m.deliveries||[]).length)return "";
   return deriveCompletedMatchResult({
@@ -1405,10 +1399,21 @@ function mergedCareerRecords(){
 }
 
 function admin(){
+ if(!app)return;
  if(sessionStorage.getItem("nict_admin")==="true")return adminPanel();
  app.innerHTML=`<div class="admin-lock card"><h1>🔒 Admin</h1><p class="muted">Enter the tournament admin password.</p><input id="adminPass" class="input" type="password" placeholder="Password"><button class="btn" onclick="unlock()">Unlock Admin</button><p id="adminMsg" class="muted"></p></div>`;
 }
-function unlock(){const p=document.getElementById("adminPass").value;if(p==="@@098"){sessionStorage.setItem("nict_admin","true");sessionStorage.setItem("nict_admin_password",p);adminPanel()}else document.getElementById("adminMsg").textContent="Incorrect password."}
+function unlock(){
+  const p=document.getElementById("adminPass")?.value||"";
+  if(p==="@@098"){
+    sessionStorage.setItem("nict_admin","true");
+    sessionStorage.setItem("nict_admin_password",p);
+    view="admin";
+    adminPanel();
+  }else if(document.getElementById("adminMsg")){
+    document.getElementById("adminMsg").textContent="Incorrect password.";
+  }
+}
 
 function isMatchFinished(m){
   if(!m)return false;
@@ -1459,6 +1464,7 @@ function isMatchFinished(m){
 }
 
 function adminPanel(){
+ view="admin";
  app.innerHTML=head(
    "Admin",
    "Match controls and player-stat approval"
@@ -1574,11 +1580,8 @@ async function updatePlayerStats(index){
   try{
     await adminCloud("POST",updated,m.match_id);
 
-    DATA.live_matches=await cloudMatches();
-    localStorage.setItem(
-      "nict_uploaded_matches",
-      JSON.stringify(DATA.live_matches||[])
-    );
+    const cloud=await cloudMatches();
+    if(cloud!==null)applyCloudMatches(cloud);
 
     await rebuildCareerFromCompletedMatches();
   }catch(e){
@@ -1696,11 +1699,8 @@ async function addMatchEvent(index,type){
   try{
     const updated={...m,events};
     await adminCloud("POST",updated,m.match_id);
-    DATA.live_matches=await cloudMatches();
-    localStorage.setItem(
-      "nict_uploaded_matches",
-      JSON.stringify(DATA.live_matches||[])
-    );
+    const cloud=await cloudMatches();
+    if(cloud!==null)applyCloudMatches(cloud);
     renderAdminMatches();
   }catch(e){
     alert("Could not save match event: "+e.message);
@@ -1730,11 +1730,8 @@ async function resumeMatch(index){
     };
 
     await adminCloud("POST",updated,m.match_id);
-    DATA.live_matches=await cloudMatches();
-    localStorage.setItem(
-      "nict_uploaded_matches",
-      JSON.stringify(DATA.live_matches||[])
-    );
+    const cloud=await cloudMatches();
+    if(cloud!==null)applyCloudMatches(cloud);
     renderAdminMatches();
   }catch(e){
     alert("Could not resume match: "+e.message);
@@ -1837,13 +1834,7 @@ async function uploadJSON(){
     await adminCloud("POST",d);
 
     const cloud=await cloudMatches();
-    if(Array.isArray(cloud)){
-      DATA.live_matches=cloud;
-      localStorage.setItem(
-        "nict_uploaded_matches",
-        JSON.stringify(cloud)
-      );
-    }
+    if(cloud!==null)applyCloudMatches(cloud);
 
     if(msg)msg.textContent=`Uploaded: ${d.team_a} vs ${d.team_b}`;
     document.getElementById("jsonFile").value="";
@@ -1858,7 +1849,8 @@ async function useUploaded(i){
   try{
     const updated={...m,status:"live",started_at:new Date().toISOString()};
     await adminCloud("POST",updated);
-    DATA.live_matches=await cloudMatches();
+    const cloud=await cloudMatches();
+    if(cloud!==null)applyCloudMatches(cloud);
     const fresh=DATA.live_matches.find(x=>String(x.match_id)===String(m.match_id))||updated;
     localStorage.setItem("nict_active_match_id",String(fresh.match_id));
     view="live";render();
@@ -1887,32 +1879,65 @@ async function deleteUploaded(i){
     await adminCloud("DELETE",null,m.match_id);
 
     const cloud=await cloudMatches();
-    if(Array.isArray(cloud)){
-      DATA.live_matches=cloud;
-      localStorage.setItem(
-        "nict_uploaded_matches",
-        JSON.stringify(cloud)
-      );
-    }
+    if(cloud!==null)applyCloudMatches(cloud);
 
     await refreshStatsFromServer({silent:true});
     renderAdminMatches();
     if(view!=="admin")render();
   }catch(e){
     alert("Delete failed: "+e.message);
-    const cloud=await cloudMatches().catch(()=>[]);
-    if(Array.isArray(cloud)){
-      DATA.live_matches=cloud;
-      localStorage.setItem(
-        "nict_uploaded_matches",
-        JSON.stringify(cloud)
-      );
-    }
+    const cloud=await cloudMatches();
+    if(cloud!==null)applyCloudMatches(cloud);
     renderAdminMatches();
     if(view!=="admin")render();
   }
 }
 
-loadData();
+function initApp(){
+  app=document.getElementById("app");
+  if(!app){
+    console.error("NICA: #app element not found.");
+    return;
+  }
 
+  document.querySelectorAll("[data-view]").forEach(b=>{
+    b.addEventListener("click",()=>navigate(b.dataset.view));
+  });
 
+  const menuBtn=document.getElementById("menuBtn");
+  const closeBtn=document.getElementById("closeMenu");
+  const overlay=document.getElementById("overlay");
+
+  if(menuBtn){
+    menuBtn.onclick=()=>{
+      document.getElementById("drawer")?.classList.add("open");
+      overlay?.classList.add("show");
+    };
+  }
+  if(closeBtn)closeBtn.onclick=closeMenu;
+  if(overlay)overlay.onclick=closeMenu;
+
+  Object.assign(window,{
+    navigate,
+    player,
+    unlock,
+    uploadJSON,
+    deleteUploaded,
+    useUploaded,
+    updatePlayerStats,
+    addMatchEvent,
+    resumeMatch,
+    startLive,
+    h2h,
+    updateRankingFormat,
+    updateRecordFormat
+  });
+
+  loadData();
+}
+
+if(document.readyState==="loading"){
+  document.addEventListener("DOMContentLoaded",initApp);
+}else{
+  initApp();
+}
