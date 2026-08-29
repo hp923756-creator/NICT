@@ -33,7 +33,8 @@
 const DATA={}; let view="home", currentPlayer="", liveTimer=null, rankingFormat="T20", recordFormat="T20";
 let BALL_DELAY_SECONDS=0;
 let TOSS_BREAK_SECONDS=0;
-const OVER_BREAK_SECONDS=60, INNINGS_BREAK_SECONDS=900;
+let OVER_BREAK_SECONDS=0;
+let INNINGS_BREAK_SECONDS=900;
 const app=document.getElementById("app");
 const CLOUD_API="/api/matches";
 let CLOUD_MATCHES=[];
