@@ -690,8 +690,24 @@ function calcMatch(ds,m,forcedInnings=null){
   for(let index=0;index<current.length;index++){
     const d=current[index];
 
-    const bats=d.batsman||d.striker||striker;
-    const ns=d.non_striker||"";
+    // Preserve the batting order from playing_xi.
+    // The first two are openers; after each wicket the next unused XI player
+    // is forced to enter as No.3, No.4, No.5, and so on.
+    const availableBatters=()=>xi.filter(name=>!bat[name]||(!bat[name].seen&&!bat[name].out));
+    const expectedLimit=Math.min(xi.length,wickets+2);
+    const allowed=new Set(xi.slice(0,expectedLimit));
+
+    let bats=d.batsman||d.striker||striker;
+    let ns=d.non_striker||non;
+
+    if(xi.length){
+      if(!bats||!allowed.has(bats)||bat[bats]?.out){
+        bats=striker&&!bat[striker]?.out?striker:(availableBatters()[0]||bats);
+      }
+      if(!ns||ns===bats||!allowed.has(ns)||bat[ns]?.out){
+        ns=non&&non!==bats&&!bat[non]?.out?non:(availableBatters().find(name=>name!==bats)||ns);
+      }
+    }
 
     if(bats)striker=bats;
     if(ns)non=ns;
@@ -778,6 +794,22 @@ function calcMatch(ds,m,forcedInnings=null){
       */
       partnershipRuns=0;
       partnershipBalls=0;
+
+      // Force the next batter strictly by playing_xi order.
+      const dismissed=st(d.dismissed_player||"");
+      const wicketType=String(d.wicket_type||d.dismissal_type||"").toLowerCase();
+      const nextBatter=availableBatters()[0]||"";
+
+      if(nextBatter&&wickets<10){
+        if(dismissed&&dismissed===striker){
+          striker=nextBatter;
+        }else if(dismissed&&dismissed===non){
+          non=nextBatter;
+        }else if(!/run.?out/i.test(wicketType)){
+          striker=nextBatter;
+        }
+        if(!bat[nextBatter])bat[nextBatter]={name:nextBatter,runs:0,balls:0,fours:0,sixes:0,out:false,seen:false};
+      }
     }
 
     previousNoBall=String(d.extra_type||"").toLowerCase()==="no-ball";
