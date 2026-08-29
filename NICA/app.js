@@ -216,6 +216,26 @@ function live(){
  if(!liveTimer)liveTimer=setInterval(()=>{if(view==="live"){const active=getActiveMatch();if(active)renderLive(active)}},1000);
  renderLive(m);
 }
+function deriveInningsOrder(m){
+ const copy=m||{};
+ const teamA=st(copy.team_a||""),teamB=st(copy.team_b||"");
+ const valid=t=>t&&[teamA,teamB].includes(st(t));
+ let first=st(copy.batting_first||""),second=st(copy.batting_second||"");
+ const sources=[Array.isArray(copy.innings)?copy.innings:[],Array.isArray(copy.innings_summary)?copy.innings_summary:[]];
+ for(const list of sources){
+   const sorted=[...list].sort((x,y)=>Number(x.innings||0)-Number(y.innings||0));
+   if(!valid(first)&&sorted[0])first=st(sorted[0].batting_team||sorted[0].team||"");
+   if(!valid(second)&&sorted[1])second=st(sorted[1].batting_team||sorted[1].team||"");
+ }
+ const ds=Array.isArray(copy.deliveries)?copy.deliveries:[];
+ if(!valid(first)){const d=ds.find(x=>Number(x.innings||1)===1);first=st(d?.batsman_team||d?.batting_team||"")}
+ if(!valid(second)){const d=ds.find(x=>Number(x.innings||1)===2);second=st(d?.batsman_team||d?.batting_team||"")}
+ if(!valid(first)&&valid(second))first=second===teamA?teamB:teamA;
+ if(!valid(second)&&valid(first))second=first===teamA?teamB:teamA;
+ if(!valid(first))first=teamA;
+ if(!valid(second))second=first===teamA?teamB:teamA;
+ return {first,second};
+}
 function normalizedMatch(m){
  const copy=JSON.parse(JSON.stringify(m));
  let a=st(copy.team_a),b=st(copy.team_b);
@@ -224,9 +244,16 @@ function normalizedMatch(m){
    const match=source.match(/([^/\\]+?)_vs_([^/\\]+?)(?:\.json)?$/i);
    if(match){a=st(match[1]);b=st(match[2])}
  }
- 
- copy.team_a=a||"GCET";copy.team_b=b||"GLB";copy.deliveries=copy.deliveries||[];
+ copy.team_a=a||"GCET";copy.team_b=b||"GLB";copy.deliveries=Array.isArray(copy.deliveries)?copy.deliveries:[];
  const toss=copy.toss||{};copy.toss_winner=copy.toss_winner||toss.winner||toss.team||toss.won_by||"";copy.toss_decision=copy.toss_decision||toss.decision||toss.choice||toss.elected_to||"";
+ const order=deriveInningsOrder(copy);
+ copy.batting_first=order.first;copy.batting_second=order.second;copy.innings_order=[order.first,order.second];
+ copy.deliveries=copy.deliveries.map(d=>{
+   const inn=Number(d?.innings||1);
+   const batting=st(d?.batsman_team||d?.batting_team||"")||(inn===1?order.first:order.second);
+   const bowling=st(d?.bowling_team||"")||(batting===copy.team_a?copy.team_b:copy.team_a);
+   return {...d,batsman_team:batting,bowling_team:bowling};
+ });
  return copy;
 }
 function tossSummary(m){if(!m.toss_winner)return "Toss result not available";const decision=String(m.toss_decision||"").toLowerCase();return `${st(m.toss_winner)} won the toss and chose to ${decision.includes("bowl")||decision.includes("field")?"bowl":"bat"}`}
@@ -634,9 +661,11 @@ function calcMatch(ds,m,forcedInnings=null){
   const inn=forcedInnings || (inningsNos.length?inningsNos[inningsNos.length-1]:1);
   const current=ds.filter(d=>Number(d.innings||1)===inn);
 
+  const inningsOrder=deriveInningsOrder(m);
   const battingTeam=
     current[0]?.batsman_team ||
-    ((inn%2===1)?st(m.team_a):st(m.team_b));
+    current[0]?.batting_team ||
+    (inn===1?inningsOrder.first:inn===2?inningsOrder.second:((inn%2===1)?inningsOrder.first:inningsOrder.second));
   const bowlingTeam=
     current[0]?.bowling_team ||
     (battingTeam===st(m.team_a)?st(m.team_b):st(m.team_a));
@@ -1772,11 +1801,17 @@ async function uploadJSON(){
     d.rankings_enabled=false;
     d.records_applied=false;
 
-    d.deliveries=d.deliveries.map(x=>({
-      ...x,
-      batsman_team:x.batsman_team||((Number(x.innings||1)%2===1)?d.team_a:d.team_b),
-      bowling_team:x.bowling_team||((Number(x.innings||1)%2===1)?d.team_b:d.team_a)
-    }));
+    const inningsOrder=deriveInningsOrder(d);
+    d.batting_first=inningsOrder.first;
+    d.batting_second=inningsOrder.second;
+    d.innings_order=[inningsOrder.first,inningsOrder.second];
+
+    d.deliveries=d.deliveries.map(x=>{
+      const inn=Number(x.innings||1);
+      const batting=st(x.batsman_team||x.batting_team||"")||(inn===1?inningsOrder.first:inningsOrder.second);
+      const bowling=st(x.bowling_team||"")||(batting===d.team_a?d.team_b:d.team_a);
+      return {...x,batsman_team:batting,bowling_team:bowling};
+    });
 
     d.events=Array.isArray(d.events)?d.events:[];
 
@@ -1836,4 +1871,5 @@ async function deleteCurrentLiveMatch(i){
 async function deleteUploaded(i){return deleteCurrentLiveMatch(i)}
 
 loadData();
+
 
