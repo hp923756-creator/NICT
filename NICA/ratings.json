@@ -1,17 +1,21 @@
-[ { “player_id”: “GCC001”, “player”: “Harsh Pandey”, “team”: “Galgotia
+[
+  { “player_id”: “GCC001”, “player”: “Harsh Pandey”, “team”: “Galgotia
 College Cricket Club”, “short_team”: “GCET”, “format”: “Test”, “role”:
 “Opening Batter / Part-time Bowler”, “batting_rating”: 72.0,
 “bowling_rating”: 32.83, “catches”: 0, “stumpings”: 0, “runouts”: 2,
-“batting_rank”: 1, “bowling_rank”: 71 }, { “player_id”: “GCC001”,
+“batting_rank”: 1, “bowling_rank”: 71 },
+{ “player_id”: “GCC001”,
 “player”: “Harsh Pandey”, “team”: “Galgotia College Cricket Club”,
 “short_team”: “GCET”, “format”: “ODI”, “role”: “Opening Batter /
-Part-time Bowler”, “batting_rating”: 99.9, “bowling_rating”: 23.1,
+Part-time Bowler”, “batting_rating”: 73.67, “bowling_rating”: 23.1,
 “catches”: 0, “stumpings”: 0, “runouts”: 2, “batting_rank”: 1,
-“bowling_rank”: 63 }, { “player_id”: “GCC001”, “player”: “Harsh Pandey”,
+“bowling_rank”: 63 },
+{ “player_id”: “GCC001”, “player”: “Harsh Pandey”,
 “team”: “Galgotia College Cricket Club”, “short_team”: “GCET”, “format”:
 “T20”, “role”: “Opening Batter / Part-time Bowler”, “batting_rating”:
 83.5, “bowling_rating”: 45.15, “catches”: 0, “stumpings”: 0, “runouts”:
-2, “batting_rank”: 1, “bowling_rank”: 56 }, { “player_id”: “GCC002”,
+2, “batting_rank”: 1, “bowling_rank”: 56 },
+{ “player_id”: “GCC002”,
 “player”: “Aarav Sharma”, “team”: “Galgotia College Cricket Club”,
 “short_team”: “GCET”, “format”: “Test”, “role”: “Captain / Opening
 Batsman”, “batting_rating”: 72.9, “bowling_rating”: 14.96, “catches”: 9,
