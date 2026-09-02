@@ -2,23 +2,23 @@
   "GCET": [
     {
       "name": "Aarav Sharma",
-      "role": "Captain / Opening Batsman",
+      "role": "Opening Batsman",
       "batting_style": "Right-hand",
       "bowling_style": "\u2014",
-      "playing_xi": true
+      "playing_xi": false
     },
     {
       "name": "Harsh Pandey",
-      "role": "Opening Batter / Part-time Bowler",
+      "role": "Captain/Opening Batter",
       "batting_style": "Right-hand",
       "bowling_style": "Right-arm part-time",
       "playing_xi": true
     },
     {
-      "name": "Abhishek Raj",
-      "role": "Wicketkeeper-Batsman",
-      "batting_style": "Right-hand",
-      "bowling_style": "\u2014",
+      "name": "Harsh Raj",
+      "role": "batting all-rounder",
+      "batting_style": "Left-hand",
+      "bowling_style": "leg-spin",
       "playing_xi": true
     },
     {
@@ -53,28 +53,28 @@
       "name": "Yash Tiwari",
       "role": "Middle-order Batsman",
       "batting_style": "Right-hand",
-      "bowling_style": "\u2014",
+      "bowling_style": "off-spin",
       "playing_xi": true
     },
     {
       "name": "Aditya Singh",
       "role": "Vice-Captain / All-rounder",
       "batting_style": "Left-hand",
-      "bowling_style": "Right-arm Medium",
+      "bowling_style": "Right-arm facer",
       "playing_xi": true
     },
     {
       "name": "Ankit Kumar",
       "role": "All-rounder",
       "batting_style": "Right-hand",
-      "bowling_style": "Right-arm Medium",
+      "bowling_style": "Right-arm-facer",
       "playing_xi": true
     },
     {
       "name": "Ayush Gupta",
       "role": "Bowling All-rounder",
       "batting_style": "Right-hand",
-      "bowling_style": "Right-arm Fast-Medium",
+      "bowling_style": "Right-arm -facer",
       "playing_xi": true
     },
     {
@@ -106,11 +106,11 @@
       "playing_xi": false
     },
     {
-      "name": "Devansh Sharma",
-      "role": "Fast Bowler",
+      "name": "Abhishek raj",
+      "role": "Wicketkeeper-Batsman",
       "batting_style": "Right-hand",
-      "bowling_style": "Right-arm Fast",
-      "playing_xi": false
+      "bowling_style": "\u2014",
+      "playing_xi": true
     },
     {
       "name": "Manish Rawat",
@@ -182,7 +182,7 @@
       "role": "Finisher",
       "batting_style": "Left-hand",
       "bowling_style": "\u2014",
-      "playing_xi": true
+      "playing_xi": false
     },
     {
       "name": "Lavish Chaudhary",
@@ -234,11 +234,11 @@
       "playing_xi": false
     },
     {
-      "name": "Sangam Singh",
+      "name": "Harsh Raj",
       "role": "Bowling All-rounder",
       "batting_style": "Right-hand",
       "bowling_style": "Right-arm Off-spin",
-      "playing_xi": false
+      "playing_xi": true
     },
     {
       "name": "Devansh Singh",
@@ -259,7 +259,7 @@
       "role": "Leg-spinner",
       "batting_style": "Right-hand",
       "bowling_style": "Right-arm Leg-spin",
-      "playing_xi": false
+      "playing_xi": true
     },
     {
       "name": "Kaushik Mahur",
